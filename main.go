@@ -3,10 +3,17 @@ package main
 import (
 	"database/sql"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
+	"os"
+	"runtime/debug"
 
+	"github.com/gorilla/mux"
 	"github.com/harshitrajsinha/medi-go/driver"
+	routesV1 "github.com/harshitrajsinha/medi-go/routes/api/v1"
+	"github.com/harshitrajsinha/medi-go/store"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 	"golang.org/x/crypto/bcrypt"
@@ -53,7 +60,6 @@ func init() {
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}
-	fmt.Println(cfg)
 	connStr := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=disable&connect_timeout=30", cfg.User, cfg.Pass, cfg.Host, cfg.Port, cfg.Name)
 	dbDriver := "postgres"
 
@@ -76,6 +82,45 @@ func init() {
 func main() {
 
 	defer db.Close()
+
+	// panic recovery
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Error occured: ", r)
+			debug.PrintStack()
+		}
+	}()
+
+	// Setup mux server for routing
+	router := mux.NewRouter()
+
+	// Dependency Injection for modularity
+	patientStore := store.NewStore(db)
+	patientRoutes := routesV1.NewPatientRoutes(patientStore)
+
+	// endpoint to check server health
+	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"message": "Server is functioning"})
+	}).Methods("GET")
+
+	// Routes for Engine
+	router.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.GetPatientByTokenID).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/patients", patientRoutes.GetAllPatients).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/patient", patientRoutes.CreatePatient).Methods(http.MethodPost)
+	router.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.UpdatePatient).Methods(http.MethodPut)
+	router.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.UpdatePatientPartial).Methods(http.MethodPatch)
+	router.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.DeletePatient).Methods(http.MethodDelete)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	log.Println("Server listening on PORT ", port)
+	log.Fatal(http.ListenAndServe(":"+port, router))
+
 }
 
 func hash() {

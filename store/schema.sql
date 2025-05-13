@@ -40,10 +40,18 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Attach trigger to updated_at column for doctor table
-CREATE TRIGGER trigger_doctor_set_updated_at
-BEFORE UPDATE ON doctor
-FOR EACH ROW
-EXECUTE FUNCTION doctor_set_updated_at();
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger WHERE tgname = 'trigger_doctor_set_updated_at'
+    ) THEN
+        CREATE TRIGGER trigger_doctor_set_updated_at
+        BEFORE UPDATE ON doctor
+        FOR EACH ROW
+        EXECUTE FUNCTION doctor_set_updated_at();
+    END IF;
+END
+$$;
 
 -- DROP TABLE IF EXISTS staff;
 
@@ -68,10 +76,18 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Attach trigger to updated_at column for staff table
-CREATE TRIGGER trigger_staff_set_updated_at
-BEFORE UPDATE ON staff
-FOR EACH ROW
-EXECUTE FUNCTION staff_set_updated_at();
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger WHERE tgname = 'trigger_staff_set_updated_at'
+    ) THEN
+        CREATE TRIGGER trigger_staff_set_updated_at
+        BEFORE UPDATE ON staff
+        FOR EACH ROW
+        EXECUTE FUNCTION staff_set_updated_at();
+    END IF;
+END
+$$;
 
 -- Create table patient
 CREATE TABLE IF NOT EXISTS patient (
@@ -83,6 +99,7 @@ CREATE TABLE IF NOT EXISTS patient (
     symptoms TEXT NULL,
     assigned_to UUID NOT NULL,
     created_by UUID NOT NULL,
+    token_id INT NOT NULL UNIQUE DEFAULT floor(random() * 900000 + 100000)::int,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_assigned_to FOREIGN KEY (assigned_to) REFERENCES doctor(doctor_id) ON DELETE CASCADE,
@@ -99,10 +116,18 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Attach trigger to updated_at column for staff table
-CREATE TRIGGER trigger_set_patient_updated_at
-BEFORE UPDATE ON patient
-FOR EACH ROW
-EXECUTE FUNCTION set_patient_updated_at();
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger WHERE tgname = 'trigger_set_patient_updated_at'
+    ) THEN
+        CREATE TRIGGER trigger_set_patient_updated_at
+        BEFORE UPDATE ON patient
+        FOR EACH ROW
+        EXECUTE FUNCTION set_patient_updated_at();
+    END IF;
+END
+$$;
 
 
 -- Clear existing data before inserting new data
