@@ -12,6 +12,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/harshitrajsinha/medi-go/driver"
+	"github.com/harshitrajsinha/medi-go/middleware"
+	loginRoutes "github.com/harshitrajsinha/medi-go/routes"
 	routesV1 "github.com/harshitrajsinha/medi-go/routes/api/v1"
 	"github.com/harshitrajsinha/medi-go/store"
 	"github.com/joho/godotenv"
@@ -106,6 +108,7 @@ func main() {
 	// Dependency Injection for modularity
 	patientStore := store.NewStore(db, rdb)
 	patientRoutes := routesV1.NewPatientRoutes(patientStore)
+	loginRoutes := loginRoutes.NewLoginRoutes(patientStore)
 
 	// endpoint to check server health
 	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -113,14 +116,18 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{"message": "Server is functioning"})
 	}).Methods("GET")
-
-	// Routes for Engine
 	router.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.GetPatientByTokenID).Methods(http.MethodGet)
-	router.HandleFunc("/api/v1/patients", patientRoutes.GetAllPatients).Methods(http.MethodGet)
-	router.HandleFunc("/api/v1/patient", patientRoutes.CreatePatient).Methods(http.MethodPost)
-	router.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.UpdatePatient).Methods(http.MethodPut)
-	router.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.UpdatePatientPartial).Methods(http.MethodPatch)
-	router.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.DeletePatient).Methods(http.MethodDelete)
+
+	// Protected Routes for patients
+	router.HandleFunc("/api/v1/login", loginRoutes.LoginHandler).Methods(http.MethodPost)
+	protectedRouter := router.PathPrefix("/").Subrouter()
+	protectedRouter.Use(middleware.AuthMiddleware)
+
+	protectedRouter.HandleFunc("/api/v1/patients", patientRoutes.GetAllPatients).Methods(http.MethodGet)
+	protectedRouter.HandleFunc("/api/v1/patient", patientRoutes.CreatePatient).Methods(http.MethodPost)
+	protectedRouter.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.UpdatePatient).Methods(http.MethodPut)
+	protectedRouter.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.UpdatePatientPartial).Methods(http.MethodPatch)
+	protectedRouter.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.DeletePatient).Methods(http.MethodDelete)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -132,7 +139,9 @@ func main() {
 
 }
 
-func hash() {
+func _() {
+
+	// this function is used to generate hashed passwords and verify it
 	password := []byte("priya@medigo")
 
 	// Hashing the password
