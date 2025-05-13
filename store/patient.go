@@ -25,9 +25,15 @@ type patientQueryResponse struct {
 }
 
 // apply pagination
-func (rec *Store) GetAllPatients(ctx context.Context) (interface{}, error) {
+func (rec *Store) GetAllPatients(ctx context.Context, limit int32, offset int32) (interface{}, error) {
 
-	rows, err := rec.db.QueryContext(ctx, "SELECT fullname, gender, age, contact, symptoms, assigned_to, token_id, updated_at, created_at FROM patient;")
+	var total_records int32
+
+	if limit <= 0 {
+		limit = 5
+	}
+
+	rows, err := rec.db.QueryContext(ctx, "SELECT fullname, gender, age, contact, symptoms, assigned_to, token_id, updated_at, created_at, count(*) over() as total_records FROM patient LIMIT $1 OFFSET $2", limit, offset)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return patientQueryResponse{}, nil // return empty model
@@ -46,7 +52,7 @@ func (rec *Store) GetAllPatients(ctx context.Context) (interface{}, error) {
 		// var registeredBy string
 		// Return single row
 		err = rows.Scan(
-			&queryData.Fullname, &queryData.Gender, &queryData.Age, &queryData.Contact, &queryData.Symptoms, &assignedDoctor, &queryData.TokenID, &queryData.UpdatedAt, &queryData.CreatedAt)
+			&queryData.Fullname, &queryData.Gender, &queryData.Age, &queryData.Contact, &queryData.Symptoms, &assignedDoctor, &queryData.TokenID, &queryData.UpdatedAt, &queryData.CreatedAt, &total_records)
 		if err != nil {
 			return patientQueryResponse{}, err
 		}

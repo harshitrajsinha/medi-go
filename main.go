@@ -16,12 +16,14 @@ import (
 	"github.com/harshitrajsinha/medi-go/store"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 )
 
 //go:embed store/schema.sql
 var schemaFS embed.FS
 var db *sql.DB
+var rdb *redis.Client
 
 type dbConfig struct {
 	User string `envconfig:"DB_USER"`
@@ -77,6 +79,13 @@ func init() {
 		log.Println("SQL file executed successfully!")
 	}
 
+	// setup redis connection
+	hostname := "redis:6379"
+	rdb, err = driver.InitRedis(hostname)
+	if err != nil {
+		log.Fatalf("Failed to connect to redis: %v", err)
+	}
+
 }
 
 func main() {
@@ -95,7 +104,7 @@ func main() {
 	router := mux.NewRouter()
 
 	// Dependency Injection for modularity
-	patientStore := store.NewStore(db)
+	patientStore := store.NewStore(db, rdb)
 	patientRoutes := routesV1.NewPatientRoutes(patientStore)
 
 	// endpoint to check server health
@@ -115,7 +124,7 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080"
+		port = "8000"
 	}
 
 	log.Println("Server listening on PORT ", port)
