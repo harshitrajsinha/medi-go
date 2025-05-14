@@ -26,9 +26,10 @@
 - **Caching** : Redis
 - **Deployment** : Vercel (Frontend) + Render (Backend)
 
-## Frontend deployment link
+## Deployment links
 
-(Frontend)[https://medigo-frontend.vercel.app]
+Frontend: https://medigo-frontend.vercel.app
+Backend: https://app-w0ew.onrender.com
 
 ## 👨‍🚀 Postman Collection
 
