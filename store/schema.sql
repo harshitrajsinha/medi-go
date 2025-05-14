@@ -143,7 +143,7 @@ VALUES ('28844ae6-d482-441b-abd6-09db2a64c707', 'Harshit Raj', 'harshitraj@medi.
 -- harshit@medigo
 ('84576c8c-9e88-494d-bdd9-e855247e11df', 'Raj Sinha', 'rajsinha@medi.go', 'geriatrics', '$2a$10$EuzlK9mLYrvPEJl1pAujWO86eOVi1dlQ92YPXrCtkqUrQglA2uPGK', '2025-05-13 11:16:06.174262', '2025-05-13 11:16:06.174262'),
 -- rajsinha@medigo
-('e58056e6-28e1-43de-afda-8c6e9363ddda', 'Lucy Mountain', 'mountain.lucy@medi.go', 'pediatrics', '$2a$10$I/SpcJ3SJddEccIujxo7GuuqDL7xYjPrlbRmkPCZrMCnWfBbSx2UC', '2025-05-13 11:16:06.174262', '2025-05-13 11:16:06.174262');
+('e58056e6-28e1-43de-afda-8c6e9363ddda', 'Lucy Mountain', 'mountain.lucy@medi.go', 'pediatrics', '$2a$10$noNf.Xr7oDSs9RqO9SCo8.8bC0I1RJBLPcAh7Vsg1BRBrhFKRRbW.', '2025-05-13 11:16:06.174262', '2025-05-13 11:16:06.174262');
 -- mountain.lucy@medigo
 
 

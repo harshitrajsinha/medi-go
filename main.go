@@ -152,7 +152,7 @@ func main() {
 func _() {
 
 	// this function is used to generate hashed passwords and verify it
-	password := []byte("priya@medigo")
+	password := []byte("mountain.lucy@medigo")
 
 	// Hashing the password
 	hashedPassword, err := bcrypt.GenerateFromPassword(password, bcrypt.DefaultCost)
@@ -163,7 +163,7 @@ func _() {
 	fmt.Println("Hashed:", string(hashedPassword))
 
 	// Verifying a password
-	err = bcrypt.CompareHashAndPassword(hashedPassword, []byte("priya@medigo"))
+	err = bcrypt.CompareHashAndPassword(hashedPassword, []byte("mountain.lucy@medigo"))
 	if err != nil {
 		fmt.Println("Invalid password")
 	} else {

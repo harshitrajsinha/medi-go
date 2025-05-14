@@ -30,7 +30,7 @@ func (rec *Store) GetAllPatients(ctx context.Context, limit int32, offset int32)
 	var total_records int32
 
 	if limit <= 0 {
-		limit = 5
+		limit = 10
 	}
 
 	rows, err := rec.db.QueryContext(ctx, "SELECT fullname, gender, age, contact, symptoms, treatment, assigned_to, token_id, updated_at, created_at, count(*) over() as total_records FROM patient ORDER BY created_at LIMIT $1 OFFSET $2", limit, offset)
@@ -79,7 +79,7 @@ func (rec *Store) GetAllPatientsByDoc(ctx context.Context, doctorID uuid.UUID, l
 	var assignedDoctor string
 
 	if limit <= 0 {
-		limit = 5
+		limit = 10
 	}
 
 	rows, err := rec.db.QueryContext(ctx, "SELECT p.fullname, p.token_id, d.fullname, count(*) over() as total_records FROM patient p INNER JOIN doctor d ON p.assigned_to = d.doctor_id WHERE d.doctor_id=$1 ORDER BY p.created_at LIMIT $2 OFFSET $3", doctorID, limit, offset)
