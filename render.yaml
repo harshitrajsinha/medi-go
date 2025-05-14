@@ -39,7 +39,7 @@ services:
 
 databases:
   - name: db
-    databaseName: ${POSTGRES_DB} # Will need to be set in Render environment
-    user: ${POSTGRES_USER} # Will need to be set in Render environment
+    databaseName: medigo # Will need to be set in Render environment
+    user: harshitraj # Will need to be set in Render environment
     plan: free # Choose appropriate plan
     region: oregon # You can change this to your preferred region
