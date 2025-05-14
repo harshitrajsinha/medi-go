@@ -1,0 +1,48 @@
+services:
+  - type: web
+    name: go-app
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: DB_HOST
+        value: your-db-host
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_USER
+        fromService:
+          type: postgres
+          name: db
+          property: user
+      - key: DB_PASS
+        fromService:
+          type: postgres
+          name: db
+          property: password
+      - key: DB_NAME
+        fromService:
+          type: postgres
+          name: db
+          property: database
+      - key: JWT_KEY
+        sync: false # You must set this manually in Render UI or use secrets manager
+      - key: DATABASE_URL
+        fromService:
+          type: postgres
+          name: db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: redis
+          property: connectionString
+
+databases:
+  - name: db
+    plan: free
+    databaseName: yourdbname
+    user: yourdbuser
+
+  - name: redis
+    plan: free
