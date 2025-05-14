@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"log"
 	"time"
-
-	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 type doctorQueryResponse struct {
@@ -30,7 +28,7 @@ func (d *Store) GetDoctorById(ctx context.Context, id string) (interface{}, erro
 		// Cache hit - deserialize JSON
 		err := json.Unmarshal([]byte(cached), &queryData)
 		if err != nil {
-			return nil, gqlerror.Errorf("%s", err)
+			return nil, fmt.Errorf("%s", err)
 		}
 
 		return queryData, nil
@@ -48,10 +46,10 @@ func (d *Store) GetDoctorById(ctx context.Context, id string) (interface{}, erro
 		return queryData, err // return empty model
 	}
 
-	// Store in Redis for 10 minutes
+	// Store in Redis for 5 minutes
 	jsonData, _ := json.Marshal(queryData)
 	log.Printf("Cache store for doctor:id:%s", id)
-	d.rdb.Set(ctx, key, jsonData, 10*time.Minute)
+	d.rdb.Set(ctx, key, jsonData, 5*time.Minute)
 
 	return queryData, err
 }

@@ -13,6 +13,7 @@ type Patient struct {
 	Age         int       `json:"age"`
 	Contact     string    `json:"contact"`
 	Symptoms    string    `json:"symptoms"`
+	Treatment   string    `json:"treatment"`
 	Assigned_to uuid.UUID `json:"assigned_doctor"`
 	Created_by  uuid.UUID `json:"registered_by"`
 }

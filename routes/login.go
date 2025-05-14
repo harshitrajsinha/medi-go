@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt"
+	"github.com/google/uuid"
 	"github.com/harshitrajsinha/medi-go/models"
 	"github.com/harshitrajsinha/medi-go/store"
 	"github.com/joho/godotenv"
@@ -24,14 +25,30 @@ func NewLoginRoutes(service *store.Store) *LoginRoutes {
 	}
 }
 
-func GenerateToken(email string) (string, error) {
+type CustomClaims struct {
+	Email  string    `json:"email"`
+	UserID uuid.UUID `json:"userid"`
+	jwt.StandardClaims
+}
+
+type Response struct {
+	Code    int         `json:"code"`
+	Message string      `json:"message,omitempty"`
+	Data    interface{} `json:"data,omitempty"`
+}
+
+func GenerateToken(email string, userId uuid.UUID) (string, error) {
 
 	expiration := time.Now().Add(30 * time.Minute) // Expiration set as 30 minute
 
-	claims := &jwt.StandardClaims{
-		ExpiresAt: expiration.Unix(),
-		IssuedAt:  time.Now().Unix(),
-		Subject:   email,
+	claims := &CustomClaims{
+		Email:  email,
+		UserID: userId,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expiration.Unix(),
+			IssuedAt:  time.Now().Unix(),
+			Subject:   email,
+		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -55,69 +72,43 @@ func (l *LoginRoutes) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&credentials); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(struct {
-			Code    int    `json:"code"`
-			Message string `json:"message"`
-		}{
-			Code: http.StatusBadRequest, Message: "Invalid Request body for authorization",
-		})
+		json.NewEncoder(w).Encode(Response{Code: http.StatusBadRequest, Message: "Invalid Request body for authorization"})
 		log.Println("Invalid Request body for authorization")
 		return
 	}
 
-	hashedPassword, err := l.service.GetLoginInfo(ctx, &credentials)
+	loginResponse, err := l.service.GetLoginInfo(ctx, &credentials)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(struct {
-			Code    int    `json:"code"`
-			Message string `json:"message"`
-		}{
-			Code: http.StatusInternalServerError, Message: "Error occured during authentication",
-		})
+		json.NewEncoder(w).Encode(Response{Code: http.StatusInternalServerError, Message: "Error occured during authentication"})
 		log.Println("Error occured during authentication")
 		return
 	}
 
 	// Verifying a password
-	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(credentials.Password))
+	err = bcrypt.CompareHashAndPassword([]byte(loginResponse.HashedPassword), []byte(credentials.Password))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(struct {
-			Code    int    `json:"code"`
-			Message string `json:"message"`
-		}{
-			Code: http.StatusBadRequest, Message: "Incorrect email or password for authorization",
-		})
+		json.NewEncoder(w).Encode(Response{Code: http.StatusBadRequest, Message: "Incorrect email or password for authorization"})
 		log.Println("Incorrect username or password for authorization")
 		return
 	}
 
-	tokenString, err := GenerateToken(credentials.Email)
+	tokenString, err := GenerateToken(credentials.Email, loginResponse.UserID)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(struct {
-			Code    int    `json:"code"`
-			Message string `json:"message"`
-		}{
-			Code: http.StatusInternalServerError, Message: "Failed to generate token for authorization",
-		})
+		json.NewEncoder(w).Encode(Response{Code: http.StatusInternalServerError, Message: "Failed to generate token for authorization"})
 		log.Println("Failed to generate token for authorization")
 		return
 	}
-	response := make([]map[string]string, 0)
-	response = append(response, map[string]string{"token": tokenString})
+	resp := map[string]string{"token": tokenString}
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(struct {
-		Code    int                 `json:"code"`
-		Message string              `json:"message"`
-		Data    []map[string]string `json:"data"`
-	}{
-		Code: http.StatusCreated, Message: "Authorization token generated successfully. Valid for next 30mins", Data: response,
-	})
+	json.NewEncoder(w).Encode(Response{Code: http.StatusCreated, Message: "Authorization token generated successfully. Valid for next 30mins", Data: resp})
+
 	log.Println("Authorization token generated successfully")
 }

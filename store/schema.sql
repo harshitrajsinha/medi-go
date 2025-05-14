@@ -97,6 +97,7 @@ CREATE TABLE IF NOT EXISTS patient (
     age INT NOT NULL,
     contact VARCHAR(10) NOT NULL,
     symptoms TEXT NULL,
+    treatment TEXT NULL DEFAULT '',
     assigned_to UUID NOT NULL,
     created_by UUID NOT NULL,
     token_id INT NOT NULL UNIQUE DEFAULT floor(random() * 900000 + 100000)::int,
