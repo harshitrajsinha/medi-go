@@ -19,6 +19,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
+	"github.com/rs/cors"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -124,10 +125,19 @@ func main() {
 	protectedRouter.Use(middleware.AuthMiddleware)
 
 	protectedRouter.HandleFunc("/api/v1/patients", patientRoutes.GetAllPatients).Methods(http.MethodGet)
+	protectedRouter.HandleFunc("/api/v1/patientbydoc/{doctor_id}", patientRoutes.GetAllPatientsByDoc).Methods(http.MethodGet)
 	protectedRouter.HandleFunc("/api/v1/patient", patientRoutes.CreatePatient).Methods(http.MethodPost)
 	protectedRouter.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.UpdatePatient).Methods(http.MethodPut)
 	protectedRouter.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.UpdatePatientPartial).Methods(http.MethodPatch)
 	protectedRouter.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.DeletePatient).Methods(http.MethodDelete)
+
+	// Enable CORS
+	handler := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+	}).Handler(router)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -135,7 +145,7 @@ func main() {
 	}
 
 	log.Println("Server listening on PORT ", port)
-	log.Fatal(http.ListenAndServe(":"+port, router))
+	log.Fatal(http.ListenAndServe(":"+port, handler))
 
 }
 

@@ -13,18 +13,18 @@ import (
 )
 
 type patientQueryResponse struct {
-	Fullname   string `json:"fullname"`
-	Gender     string `json:"gender"`
-	Age        int    `json:"age"`
-	Contact    string `json:"contact"`
-	Symptoms   string `json:"symptoms"`
-	AssignedTo string `json:"assigned_to"`
-	TokenID    string `json:"token_id"`
-	CreatedAt  string `json:"created_at"`
-	UpdatedAt  string `json:"updated_at"`
+	Fullname   string `json:"fullname,omitempty"`
+	Gender     string `json:"gender,omitempty"`
+	Age        int    `json:"age,omitempty"`
+	Contact    string `json:"contact,omitempty"`
+	Symptoms   string `json:"symptoms,omitempty"`
+	Treatment  string `json:"treatment,omitempty"`
+	AssignedTo string `json:"assigned_to,omitempty"`
+	TokenID    string `json:"token_id,omitempty"`
+	CreatedAt  string `json:"created_at,omitempty"`
+	UpdatedAt  string `json:"updated_at,omitempty"`
 }
 
-// apply pagination
 func (rec *Store) GetAllPatients(ctx context.Context, limit int32, offset int32) (interface{}, error) {
 
 	var total_records int32
@@ -33,7 +33,7 @@ func (rec *Store) GetAllPatients(ctx context.Context, limit int32, offset int32)
 		limit = 5
 	}
 
-	rows, err := rec.db.QueryContext(ctx, "SELECT fullname, gender, age, contact, symptoms, assigned_to, token_id, updated_at, created_at, count(*) over() as total_records FROM patient LIMIT $1 OFFSET $2", limit, offset)
+	rows, err := rec.db.QueryContext(ctx, "SELECT fullname, gender, age, contact, symptoms, treatment, assigned_to, token_id, updated_at, created_at, count(*) over() as total_records FROM patient ORDER BY created_at LIMIT $1 OFFSET $2", limit, offset)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return patientQueryResponse{}, nil // return empty model
@@ -52,7 +52,7 @@ func (rec *Store) GetAllPatients(ctx context.Context, limit int32, offset int32)
 		// var registeredBy string
 		// Return single row
 		err = rows.Scan(
-			&queryData.Fullname, &queryData.Gender, &queryData.Age, &queryData.Contact, &queryData.Symptoms, &assignedDoctor, &queryData.TokenID, &queryData.UpdatedAt, &queryData.CreatedAt, &total_records)
+			&queryData.Fullname, &queryData.Gender, &queryData.Age, &queryData.Contact, &queryData.Symptoms, &queryData.Treatment, &assignedDoctor, &queryData.TokenID, &queryData.UpdatedAt, &queryData.CreatedAt, &total_records)
 		if err != nil {
 			return patientQueryResponse{}, err
 		}
@@ -73,13 +73,53 @@ func (rec *Store) GetAllPatients(ctx context.Context, limit int32, offset int32)
 	return allPatientData, nil
 }
 
+func (rec *Store) GetAllPatientsByDoc(ctx context.Context, doctorID uuid.UUID, limit int32, offset int32) (interface{}, error) {
+
+	var total_records int32
+	var assignedDoctor string
+
+	if limit <= 0 {
+		limit = 5
+	}
+
+	rows, err := rec.db.QueryContext(ctx, "SELECT p.fullname, p.token_id, d.fullname, count(*) over() as total_records FROM patient p INNER JOIN doctor d ON p.assigned_to = d.doctor_id WHERE d.doctor_id=$1 ORDER BY p.created_at LIMIT $2 OFFSET $3", doctorID, limit, offset)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return patientQueryResponse{}, nil // return empty model
+		}
+		return patientQueryResponse{}, err // return empty model
+	}
+	defer rows.Close()
+
+	// slice to store all rows
+	allPatientData := make([]interface{}, 0)
+
+	// Get each row data into a slice
+	for rows.Next() {
+		var queryData patientQueryResponse
+
+		// var registeredBy string
+		// Return single row
+		err = rows.Scan(
+			&queryData.Fullname, &queryData.TokenID, &assignedDoctor, &total_records)
+		if err != nil {
+			return patientQueryResponse{}, err
+		}
+
+		// store each row
+		allPatientData = append(allPatientData, queryData)
+	}
+
+	return allPatientData, nil
+}
+
 func (rec *Store) GetPatientByTokenID(ctx context.Context, token_id string) (interface{}, error) {
 	var queryData patientQueryResponse
 	var assignedDoctor string
 	// var registeredBy string
 
-	err := rec.db.QueryRowContext(ctx, "SELECT fullname, gender, age, contact, symptoms, assigned_to, token_id, updated_at, created_at FROM patient WHERE token_id=$1", token_id).Scan(
-		&queryData.Fullname, &queryData.Gender, &queryData.Age, &queryData.Contact, &queryData.Symptoms, &assignedDoctor, &queryData.TokenID, &queryData.UpdatedAt, &queryData.CreatedAt)
+	err := rec.db.QueryRowContext(ctx, "SELECT fullname, gender, age, contact, symptoms, treatment, assigned_to, token_id, updated_at, created_at FROM patient WHERE token_id=$1", token_id).Scan(
+		&queryData.Fullname, &queryData.Gender, &queryData.Age, &queryData.Contact, &queryData.Symptoms, &queryData.Treatment, &assignedDoctor, &queryData.TokenID, &queryData.UpdatedAt, &queryData.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return queryData, nil // return empty model
@@ -204,6 +244,15 @@ func (rec *Store) UpdatePatient(ctx context.Context, tokenID string, patientReq 
 		}
 		query.WriteString(fmt.Sprintf("symptoms=$%d ", argCount))
 		args = append(args, patientReq.Symptoms)
+		argCount++
+	}
+
+	if patientReq.Treatment != "" {
+		if argCount > 1 {
+			query.WriteString(", ")
+		}
+		query.WriteString(fmt.Sprintf("treatment=$%d ", argCount))
+		args = append(args, patientReq.Treatment)
 		argCount++
 	}
 

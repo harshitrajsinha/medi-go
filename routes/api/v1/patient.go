@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/harshitrajsinha/medi-go/models"
 	"github.com/harshitrajsinha/medi-go/store"
@@ -127,6 +128,65 @@ func (p *PatientRoutes) GetPatientByTokenID(w http.ResponseWriter, r *http.Reque
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(Response{Code: http.StatusOK, Data: respData})
 		log.Println("Patient data populated successfully based on token ID")
+	} else {
+		http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
+	}
+}
+
+func (p *PatientRoutes) GetAllPatientsByDoc(w http.ResponseWriter, r *http.Request) {
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	// panic recovery
+	defer func() {
+		var r interface{}
+		if r = recover(); r != nil {
+			log.Println("Error occured: ", r)
+			debug.PrintStack()
+		}
+	}()
+
+	if limiter.Allow() {
+
+		ctx := r.Context()
+
+		params := mux.Vars(r)
+
+		// Get id
+		id := params["doctor_id"]
+
+		// Check if id is valid uuid
+		doctorID, _ := uuid.Parse(id)
+		if doctorID.Version() != 4 {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(Response{Code: http.StatusBadRequest, Message: "Invalid doctor ID"})
+			log.Println("Invalid Van ID")
+			return
+		}
+
+		query := r.URL.Query()
+
+		limit, _ := strconv.Atoi(query.Get("limit"))
+		offset, _ := strconv.Atoi(query.Get("offset"))
+
+		// Get data from store
+		resp, err := p.service.GetAllPatientsByDoc(ctx, doctorID, int32(limit), int32(offset))
+		if err != nil {
+			// send error response
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(Response{Code: http.StatusInternalServerError, Message: "Error occured while reading data"})
+			panic(err)
+		}
+
+		// Send response
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(Response{Code: http.StatusOK, Data: resp})
+		log.Println("All patients data populated successfully")
+
 	} else {
 		http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
 	}
@@ -271,7 +331,7 @@ func (p *PatientRoutes) UpdatePatient(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Pass data to store to update engine
+		// Pass data to store to update patient
 		updatedPatient, err := p.service.UpdatePatient(ctx, id, &patientReq)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -282,9 +342,13 @@ func (p *PatientRoutes) UpdatePatient(w http.ResponseWriter, r *http.Request) {
 
 		if updatedPatient > 0 {
 			// data is updated successfully
+			w.WriteHeader(http.StatusOK)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(Response{Code: http.StatusOK, Message: "Patient data updated successfully!"})
+			log.Println("Patient data updated successfully!")
 			log.Println("Patient data updated successfully!")
 			// Get the updated result
-			p.GetPatientByTokenID(w, r)
+			// p.GetPatientByTokenID(w, r)
 		} else {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
@@ -357,7 +421,7 @@ func (p *PatientRoutes) UpdatePatientPartial(w http.ResponseWriter, r *http.Requ
 			return
 		}
 
-		// Pass data to store to update engine
+		// Pass data to store to update patient
 		updatedPatient, err := p.service.UpdatePatient(ctx, id, &patientReq)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -368,9 +432,12 @@ func (p *PatientRoutes) UpdatePatientPartial(w http.ResponseWriter, r *http.Requ
 
 		if updatedPatient > 0 {
 			// data is updated successfully
+			w.WriteHeader(http.StatusOK)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(Response{Code: http.StatusOK, Message: "Patient data updated successfully!"})
 			log.Println("Patient data updated successfully!")
 			// Get the updated result
-			p.GetPatientByTokenID(w, r)
+			// p.GetPatientByTokenID(w, r)
 		} else {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
@@ -415,7 +482,7 @@ func (p *PatientRoutes) DeletePatient(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Pass data to service layer to delete engine
+		// Pass data to service layer to delete patient
 		deletedPatient, err := p.service.DeletePatient(ctx, id)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
