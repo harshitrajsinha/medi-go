@@ -112,11 +112,13 @@ func main() {
 	loginRoutes := loginRoutes.NewLoginRoutes(patientStore)
 
 	// endpoint to check server health
-	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{"message": "Server is functioning"})
 	}).Methods("GET")
+
+	// Public routes for patient details
 	router.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.GetPatientByTokenID).Methods(http.MethodGet)
 
 	// Protected Routes for patients
@@ -133,7 +135,7 @@ func main() {
 
 	// Enable CORS
 	handler := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedOrigins:   []string{"http://localhost:3000", "https://medigo-frontend.vercel.app"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
