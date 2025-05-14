@@ -28,6 +28,16 @@ services:
           property: database
       - key: JWT_KEY
         sync: false
+      - key: REDIS_HOST
+        fromService:
+          type: redis
+          name: redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          type: redis
+          name: redis
+          property: port
 
   - type: redis
     name: redis

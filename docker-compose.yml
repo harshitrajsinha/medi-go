@@ -25,9 +25,13 @@ services:
       DB_PASS: ${DB_PASS}
       DB_NAME: ${DB_NAME}
       JWT_KEY: ${JWT_KEY}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
   redis:
     image: redis:7.4-alpine
     ports:
