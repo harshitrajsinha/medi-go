@@ -65,6 +65,7 @@ func GenerateToken(email string, userId uuid.UUID) (string, error) {
 	return signedToken, nil
 }
 
+// POST: Return auth token based on credentials
 func (l *LoginRoutes) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var credentials models.Credentials
 

@@ -23,6 +23,8 @@ func generateKey() []byte {
 	return []byte(jwtKeyString)
 }
 
+// Middleware to validate authentication token from request
+
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
@@ -35,7 +37,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			}{
 				Code: http.StatusUnauthorized, Message: "Authorization header required",
 			})
-			log.Println("Authorization header required")
+			log.Println("Authorization header missing")
 			return
 		}
 

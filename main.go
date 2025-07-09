@@ -125,7 +125,7 @@ func main() {
 
 	// Protected Routes
 	protectedRouter.HandleFunc("/api/v1/patients", patientRoutes.GetAllPatients).Methods(http.MethodGet)
-	protectedRouter.HandleFunc("/api/v1/patientbydoc/{doctor_id}", patientRoutes.GetAllPatientsByDoc).Methods(http.MethodGet)
+	protectedRouter.HandleFunc("/api/v1/patientbydoc/{doctor_id}", patientRoutes.GetAllPatientsByDocID).Methods(http.MethodGet)
 	protectedRouter.HandleFunc("/api/v1/patient", patientRoutes.CreatePatient).Methods(http.MethodPost)
 	protectedRouter.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.UpdatePatient).Methods(http.MethodPut)
 	protectedRouter.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.UpdatePatientPartial).Methods(http.MethodPatch)
@@ -149,9 +149,9 @@ func main() {
 
 }
 
+// function to generate hashed passwords and verify it
 func _() {
 
-	// this function is used to generate hashed passwords and verify it
 	password := []byte("mountain.lucy@medigo")
 
 	// Hashing the password

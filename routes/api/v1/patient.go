@@ -39,10 +39,8 @@ type Response struct {
 	Data    interface{} `json:"data,omitempty"`
 }
 
+// GET: Return list of patients based on pagination
 func (p *PatientRoutes) GetAllPatients(w http.ResponseWriter, r *http.Request) {
-
-	mu.Lock()
-	defer mu.Unlock()
 
 	// panic recovery
 	defer func() {
@@ -55,15 +53,14 @@ func (p *PatientRoutes) GetAllPatients(w http.ResponseWriter, r *http.Request) {
 
 	if limiter.Allow() {
 
-		ctx := r.Context()
-
 		query := r.URL.Query()
 
 		limit, _ := strconv.Atoi(query.Get("limit"))
 		offset, _ := strconv.Atoi(query.Get("offset"))
 
 		// Get data from store
-		resp, err := p.service.GetAllPatients(ctx, int32(limit), int32(offset))
+		resp, err := p.service.GetAllPatients(int32(limit), int32(offset))
+
 		if err != nil {
 			// send error response
 			w.WriteHeader(http.StatusInternalServerError)
@@ -130,10 +127,8 @@ func (p *PatientRoutes) GetPatientByTokenID(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-func (p *PatientRoutes) GetAllPatientsByDoc(w http.ResponseWriter, r *http.Request) {
-
-	mu.Lock()
-	defer mu.Unlock()
+// GET: Return list of patients based on doctor ID
+func (p *PatientRoutes) GetAllPatientsByDocID(w http.ResponseWriter, r *http.Request) {
 
 	// panic recovery
 	defer func() {
@@ -146,12 +141,10 @@ func (p *PatientRoutes) GetAllPatientsByDoc(w http.ResponseWriter, r *http.Reque
 
 	if limiter.Allow() {
 
-		ctx := r.Context()
-
 		params := mux.Vars(r)
 
 		// Get id
-		id := params["doctor_id"]
+		id := strings.TrimSpace(params["doctor_id"])
 
 		// Check if id is valid uuid
 		doctorID, _ := uuid.Parse(id)
@@ -159,7 +152,7 @@ func (p *PatientRoutes) GetAllPatientsByDoc(w http.ResponseWriter, r *http.Reque
 			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(Response{Code: http.StatusBadRequest, Message: "Invalid doctor ID"})
-			log.Println("Invalid Van ID")
+			log.Println("Invalid doctor ID")
 			return
 		}
 
@@ -169,7 +162,7 @@ func (p *PatientRoutes) GetAllPatientsByDoc(w http.ResponseWriter, r *http.Reque
 		offset, _ := strconv.Atoi(query.Get("offset"))
 
 		// Get data from store
-		resp, err := p.service.GetAllPatientsByDoc(ctx, doctorID, int32(limit), int32(offset))
+		resp, err := p.service.GetAllPatientsByDoc(doctorID, int32(limit), int32(offset))
 		if err != nil {
 			// send error response
 			w.WriteHeader(http.StatusInternalServerError)
@@ -189,6 +182,7 @@ func (p *PatientRoutes) GetAllPatientsByDoc(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+// POST: Return newly created patient's token ID
 func (p *PatientRoutes) CreatePatient(w http.ResponseWriter, r *http.Request) {
 
 	mu.Lock()
@@ -204,8 +198,6 @@ func (p *PatientRoutes) CreatePatient(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if limiter.Allow() {
-
-		ctx := r.Context()
 
 		// Read request body
 		body, err := io.ReadAll(r.Body)
@@ -241,7 +233,7 @@ func (p *PatientRoutes) CreatePatient(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Pass data to store
-		patientToken, err := p.service.CreatePatient(ctx, &patientReq)
+		patientToken, err := p.service.CreatePatient(&patientReq)
 		if err != nil {
 			// error while storing data to db
 			w.WriteHeader(http.StatusInternalServerError)
@@ -269,6 +261,7 @@ func (p *PatientRoutes) CreatePatient(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// PUT: Updates existing patient record
 func (p *PatientRoutes) UpdatePatient(w http.ResponseWriter, r *http.Request) {
 
 	mu.Lock()
@@ -285,13 +278,11 @@ func (p *PatientRoutes) UpdatePatient(w http.ResponseWriter, r *http.Request) {
 
 	if limiter.Allow() {
 
-		ctx := r.Context()
-
 		// Get id
 		params := mux.Vars(r)
-		id := params["token_id"]
+		id := strings.TrimSpace(params["token_id"])
 
-		if len(id) <= 0 {
+		if len(id) != 6 {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(Response{Code: http.StatusBadRequest, Message: "Invalid token ID"})
@@ -329,7 +320,7 @@ func (p *PatientRoutes) UpdatePatient(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Pass data to store to update patient
-		updatedPatient, err := p.service.UpdatePatient(ctx, id, &patientReq)
+		updatedPatient, err := p.service.UpdatePatient(id, &patientReq)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Header().Set("Content-Type", "application/json")
@@ -359,6 +350,7 @@ func (p *PatientRoutes) UpdatePatient(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// PATCH: Updates existing patient record field
 func (p *PatientRoutes) UpdatePatientPartial(w http.ResponseWriter, r *http.Request) {
 
 	mu.Lock()
@@ -375,13 +367,11 @@ func (p *PatientRoutes) UpdatePatientPartial(w http.ResponseWriter, r *http.Requ
 
 	if limiter.Allow() {
 
-		ctx := r.Context()
-
 		// Get id
 		params := mux.Vars(r)
-		id := params["token_id"]
+		id := strings.TrimSpace(params["token_id"])
 
-		if len(id) <= 0 {
+		if len(id) != 6 {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(Response{Code: http.StatusBadRequest, Message: "Invalid token ID"})
@@ -419,7 +409,7 @@ func (p *PatientRoutes) UpdatePatientPartial(w http.ResponseWriter, r *http.Requ
 		}
 
 		// Pass data to store to update patient
-		updatedPatient, err := p.service.UpdatePatient(ctx, id, &patientReq)
+		updatedPatient, err := p.service.UpdatePatient(id, &patientReq)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Header().Set("Content-Type", "application/json")
@@ -448,6 +438,7 @@ func (p *PatientRoutes) UpdatePatientPartial(w http.ResponseWriter, r *http.Requ
 	}
 }
 
+// DELETE: Delete patient record
 func (p *PatientRoutes) DeletePatient(w http.ResponseWriter, r *http.Request) {
 
 	mu.Lock()
@@ -464,11 +455,10 @@ func (p *PatientRoutes) DeletePatient(w http.ResponseWriter, r *http.Request) {
 
 	if limiter.Allow() {
 
-		ctx := r.Context()
 		params := mux.Vars(r)
 
 		// Get id
-		id := params["token_id"]
+		id := strings.TrimSpace(params["token_id"])
 
 		if len(id) <= 0 {
 			log.Println(id)
@@ -480,7 +470,7 @@ func (p *PatientRoutes) DeletePatient(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Pass data to service layer to delete patient
-		deletedPatient, err := p.service.DeletePatient(ctx, id)
+		deletedPatient, err := p.service.DeletePatient(id)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Header().Set("Content-Type", "application/json")

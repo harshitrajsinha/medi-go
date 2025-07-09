@@ -26,9 +26,12 @@ type patientQueryResponse struct {
 	UpdatedAt  string `json:"updated_at,omitempty"`
 }
 
-func (rec *Store) GetAllPatients(ctx context.Context, limit int32, offset int32) (interface{}, error) {
+// Queries list of patients
+func (rec *Store) GetAllPatients(limit int32, offset int32) (interface{}, error) {
 
 	var total_records int32
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second) // if database takes too long, the query should be cancelled automatically after 45 seconds
+	defer cancel()
 
 	if limit <= 0 {
 		limit = 10
@@ -37,14 +40,15 @@ func (rec *Store) GetAllPatients(ctx context.Context, limit int32, offset int32)
 	rows, err := rec.db.QueryContext(ctx, "SELECT fullname, gender, age, contact, symptoms, treatment, assigned_to, token_id, updated_at, created_at, count(*) over() as total_records FROM patient ORDER BY created_at LIMIT $1 OFFSET $2", limit, offset)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return patientQueryResponse{}, nil // return empty model
+			return patientQueryResponse{}, errors.New("no such data found") // return empty model
 		}
 		return patientQueryResponse{}, err // return empty model
 	}
 	defer rows.Close()
 
 	// slice to store all rows
-	allPatientData := make([]interface{}, 0)
+	allPatientData := make([]patientQueryResponse, 0)
+	responseData := make([]interface{}, 2)
 
 	// Get each row data into a slice
 	for rows.Next() {
@@ -71,13 +75,19 @@ func (rec *Store) GetAllPatients(ctx context.Context, limit int32, offset int32)
 		allPatientData = append(allPatientData, queryData)
 	}
 
-	return allPatientData, nil
+	responseData[0] = map[string][]patientQueryResponse{"patients_data": allPatientData}
+	responseData[1] = map[string]int32{"total_no_records": total_records}
+
+	return responseData, nil
 }
 
-func (rec *Store) GetAllPatientsByDoc(ctx context.Context, doctorID uuid.UUID, limit int32, offset int32) (interface{}, error) {
+// Queries list of patients based on doctor ID
+func (rec *Store) GetAllPatientsByDoc(doctorID uuid.UUID, limit int32, offset int32) (interface{}, error) {
 
 	var total_records int32
 	var assignedDoctor string
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second) // if database takes too long, the query should be cancelled automatically after 45 seconds
+	defer cancel()
 
 	if limit <= 0 {
 		limit = 10
@@ -86,14 +96,15 @@ func (rec *Store) GetAllPatientsByDoc(ctx context.Context, doctorID uuid.UUID, l
 	rows, err := rec.db.QueryContext(ctx, "SELECT p.fullname, p.token_id, d.fullname, count(*) over() as total_records FROM patient p INNER JOIN doctor d ON p.assigned_to = d.doctor_id WHERE d.doctor_id=$1 ORDER BY p.created_at LIMIT $2 OFFSET $3", doctorID, limit, offset)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return patientQueryResponse{}, nil // return empty model
+			return patientQueryResponse{}, errors.New("no such data found") // return empty model
 		}
 		return patientQueryResponse{}, err // return empty model
 	}
 	defer rows.Close()
 
 	// slice to store all rows
-	allPatientData := make([]interface{}, 0)
+	allPatientData := make([]patientQueryResponse, 0)
+	responseData := make([]interface{}, 2)
 
 	// Get each row data into a slice
 	for rows.Next() {
@@ -111,10 +122,13 @@ func (rec *Store) GetAllPatientsByDoc(ctx context.Context, doctorID uuid.UUID, l
 		allPatientData = append(allPatientData, queryData)
 	}
 
-	return allPatientData, nil
+	responseData[0] = map[string][]patientQueryResponse{"patients_data": allPatientData}
+	responseData[1] = map[string]int32{"total_no_records": total_records}
+
+	return responseData, nil
 }
 
-// Queries patient details based on token id
+// Queries patient details based on token ID
 func (rec *Store) GetPatientByTokenID(token_id string) (interface{}, error) {
 	var queryData patientQueryResponse
 	var assignedDoctor string
@@ -144,9 +158,12 @@ func (rec *Store) GetPatientByTokenID(token_id string) (interface{}, error) {
 	return queryData, err
 }
 
-func (rec *Store) CreatePatient(ctx context.Context, patientMod *models.Patient) (int64, error) {
+// Queries INSERT to create new patient
+func (rec *Store) CreatePatient(patientMod *models.Patient) (int64, error) {
 
 	var tokenID int64
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second) // if database takes too long, the query should be cancelled automatically after 45 seconds
+	defer cancel()
 
 	// Begin DB transaction
 	tx, err := rec.db.BeginTx(ctx, nil)
@@ -184,7 +201,11 @@ func (rec *Store) CreatePatient(ctx context.Context, patientMod *models.Patient)
 	return tokenID, nil
 }
 
-func (rec *Store) UpdatePatient(ctx context.Context, tokenID string, patientReq *models.Patient) (int64, error) {
+// Queries UPDATE to update existing patient record
+func (rec *Store) UpdatePatient(tokenID string, patientReq *models.Patient) (int64, error) {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second) // if database takes too long, the query should be cancelled automatically after 45 seconds
+	defer cancel()
 
 	// DB transaction
 	tx, err := rec.db.BeginTx(ctx, nil)
@@ -292,7 +313,11 @@ func (rec *Store) UpdatePatient(ctx context.Context, tokenID string, patientReq 
 	return rowAffected, nil
 }
 
-func (rec *Store) DeletePatient(ctx context.Context, tokenID string) (int64, error) {
+// Queries DELETE to remove patient record
+func (rec *Store) DeletePatient(tokenID string) (int64, error) {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second) // if database takes too long, the query should be cancelled automatically after 45 seconds
+	defer cancel()
 
 	// DB transaction
 	tx, err := rec.db.BeginTx(ctx, nil)
