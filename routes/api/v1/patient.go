@@ -83,10 +83,8 @@ func (p *PatientRoutes) GetAllPatients(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GET: Return patient details from token ID
 func (p *PatientRoutes) GetPatientByTokenID(w http.ResponseWriter, r *http.Request) {
-
-	mu.Lock()
-	defer mu.Unlock()
 
 	// panic recovery
 	defer func() {
@@ -98,13 +96,12 @@ func (p *PatientRoutes) GetPatientByTokenID(w http.ResponseWriter, r *http.Reque
 
 	if limiter.Allow() {
 
-		ctx := r.Context()
 		params := mux.Vars(r)
-
-		// Get id
+		// Get token id
 		id := params["token_id"]
 
-		if len(id) <= 0 {
+		// 100000 (inclusive) → 999999 (inclusive)
+		if len(id) != 6 {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(Response{Code: http.StatusBadRequest, Message: "Invalid token ID"})
@@ -112,8 +109,8 @@ func (p *PatientRoutes) GetPatientByTokenID(w http.ResponseWriter, r *http.Reque
 			return
 		}
 
-		// Get data from service layer
-		resp, err := p.service.GetPatientByTokenID(ctx, id)
+		// Get data from store layer
+		resp, err := p.service.GetPatientByTokenID(id)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Header().Set("Content-Type", "application/json")
@@ -127,9 +124,9 @@ func (p *PatientRoutes) GetPatientByTokenID(w http.ResponseWriter, r *http.Reque
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(Response{Code: http.StatusOK, Data: respData})
-		log.Println("Patient data populated successfully based on token ID")
+		log.Println("Patient data populated successfully for token ID- ", id)
 	} else {
-		http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
+		http.Error(w, "Too Many Requests - Limit: 1request/second", http.StatusTooManyRequests)
 	}
 }
 

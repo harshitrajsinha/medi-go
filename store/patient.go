@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/harshitrajsinha/medi-go/models"
@@ -58,7 +59,7 @@ func (rec *Store) GetAllPatients(ctx context.Context, limit int32, offset int32)
 		}
 
 		// Get Assigned doctor name
-		doctorData, err := rec.GetDoctorById(ctx, assignedDoctor)
+		doctorData, err := rec.GetDoctorById(assignedDoctor)
 		if err != nil {
 			queryData.AssignedTo = ""
 		} else {
@@ -113,10 +114,14 @@ func (rec *Store) GetAllPatientsByDoc(ctx context.Context, doctorID uuid.UUID, l
 	return allPatientData, nil
 }
 
-func (rec *Store) GetPatientByTokenID(ctx context.Context, token_id string) (interface{}, error) {
+// Queries patient details based on token id
+func (rec *Store) GetPatientByTokenID(token_id string) (interface{}, error) {
 	var queryData patientQueryResponse
 	var assignedDoctor string
 	// var registeredBy string
+
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second) // if database takes too long, the query should be cancelled automatically after 45 seconds
+	defer cancel()
 
 	err := rec.db.QueryRowContext(ctx, "SELECT fullname, gender, age, contact, symptoms, treatment, assigned_to, token_id, updated_at, created_at FROM patient WHERE token_id=$1", token_id).Scan(
 		&queryData.Fullname, &queryData.Gender, &queryData.Age, &queryData.Contact, &queryData.Symptoms, &queryData.Treatment, &assignedDoctor, &queryData.TokenID, &queryData.UpdatedAt, &queryData.CreatedAt)
@@ -128,9 +133,9 @@ func (rec *Store) GetPatientByTokenID(ctx context.Context, token_id string) (int
 	}
 
 	// Get Assigned doctor name
-	doctorData, err := rec.GetDoctorById(ctx, assignedDoctor)
+	doctorData, err := rec.GetDoctorById(assignedDoctor)
 	if err != nil {
-		queryData.AssignedTo = ""
+		queryData.AssignedTo = "NA"
 	} else {
 		doctor_name := doctorData.(doctorQueryResponse).Fullname
 		queryData.AssignedTo = doctor_name

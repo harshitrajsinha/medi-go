@@ -82,10 +82,10 @@ func init() {
 	}
 
 	// setup redis connection
-	rdb, err = driver.InitRedis()
-	if err != nil {
-		log.Fatalf("Failed to connect to redis: %v", err)
-	}
+	// rdb, err = driver.InitRedis()
+	// if err != nil {
+	// 	log.Fatalf("Failed to connect to redis: %v", err)
+	// }
 
 }
 
