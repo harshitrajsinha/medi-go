@@ -31,6 +31,7 @@ func InitDB(dbDriver string, connString string) (*sql.DB, error) {
 	db.SetConnMaxIdleTime(5 * time.Minute)
 
 	// connection timeout at application level
+	// (If db.PingContext(ctx) does not complete within 30 seconds, it will be canceled automatically.)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 

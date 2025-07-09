@@ -5,17 +5,16 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
 )
 
-func InitRedis(hostname string) (*redis.Client, error) {
-
-	_ = godotenv.Load()
+func InitRedis() (*redis.Client, error) {
 
 	redisHost := os.Getenv("REDIS_HOST")
 	redisPort := os.Getenv("REDIS_PORT")
+
 	if redisHost == "" {
 		redisHost = "redis" // fallback for local development
 	}
@@ -28,7 +27,9 @@ func InitRedis(hostname string) (*redis.Client, error) {
 		DB:       0,  // use default DB
 	})
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	_, err := rdb.Ping(ctx).Result()
 	if err != nil {
 		log.Println("Redis connection failed:", err)

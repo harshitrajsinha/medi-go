@@ -29,7 +29,7 @@ var db *sql.DB
 var rdb *redis.Client
 
 type dbConfig struct {
-	User string `envconfig:"DB_USER"`
+	User string `envconfig:"DB_USER"` // looks for 'DB_USER' in environment, tag key should match .env key
 	Host string `envconfig:"DB_HOST"`
 	Port string `envconfig:"DB_PORT"`
 	Pass string `envconfig:"DB_PASS"`
@@ -59,17 +59,16 @@ func init() {
 	var cfg dbConfig
 	var err error
 
-	// load environment variables
-	_ = godotenv.Load()
-	err = envconfig.Process("", &cfg)
+	_ = godotenv.Load()               // load env from .env file to program's environment
+	err = envconfig.Process("", &cfg) // load env from program's environment to declared struct
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}
-	connStr := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=disable&connect_timeout=30", cfg.User, cfg.Pass, cfg.Host, cfg.Port, cfg.Name)
+	dbConnStr := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=disable&connect_timeout=30", cfg.User, cfg.Pass, cfg.Host, cfg.Port, cfg.Name)
 	dbDriver := "postgres"
 
 	// Get db client
-	db, err = driver.InitDB(dbDriver, connStr)
+	db, err = driver.InitDB(dbDriver, dbConnStr)
 	if err != nil {
 		log.Fatalf("Failed to connect to DB: %v", err)
 	}
@@ -83,8 +82,7 @@ func init() {
 	}
 
 	// setup redis connection
-	hostname := "redis:6379"
-	rdb, err = driver.InitRedis(hostname)
+	rdb, err = driver.InitRedis()
 	if err != nil {
 		log.Fatalf("Failed to connect to redis: %v", err)
 	}
@@ -108,8 +106,8 @@ func main() {
 
 	// Dependency Injection for modularity
 	patientStore := store.NewStore(db, rdb)
-	patientRoutes := routesV1.NewPatientRoutes(patientStore)
 	loginRoutes := loginRoutes.NewLoginRoutes(patientStore)
+	patientRoutes := routesV1.NewPatientRoutes(patientStore)
 
 	// endpoint to check server health
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -123,7 +121,7 @@ func main() {
 
 	// Protected Routes for patients
 	router.HandleFunc("/api/v1/login", loginRoutes.LoginHandler).Methods(http.MethodPost)
-	protectedRouter := router.PathPrefix("/").Subrouter()
+	protectedRouter := router.PathPrefix("/").Subrouter() // creating subrouter for path "/" that will require authentication
 	protectedRouter.Use(middleware.AuthMiddleware)
 
 	protectedRouter.HandleFunc("/api/v1/patients", patientRoutes.GetAllPatients).Methods(http.MethodGet)
