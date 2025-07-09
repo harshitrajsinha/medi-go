@@ -119,11 +119,11 @@ func main() {
 	// Public routes for patient details
 	router.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.GetPatientByTokenID).Methods(http.MethodGet)
 
-	// Protected Routes for patients
 	router.HandleFunc("/api/v1/login", loginRoutes.LoginHandler).Methods(http.MethodPost)
 	protectedRouter := router.PathPrefix("/").Subrouter() // creating subrouter for path "/" that will require authentication
 	protectedRouter.Use(middleware.AuthMiddleware)
 
+	// Protected Routes
 	protectedRouter.HandleFunc("/api/v1/patients", patientRoutes.GetAllPatients).Methods(http.MethodGet)
 	protectedRouter.HandleFunc("/api/v1/patientbydoc/{doctor_id}", patientRoutes.GetAllPatientsByDoc).Methods(http.MethodGet)
 	protectedRouter.HandleFunc("/api/v1/patient", patientRoutes.CreatePatient).Methods(http.MethodPost)

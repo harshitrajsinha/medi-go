@@ -5,13 +5,14 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"runtime/debug"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"github.com/harshitrajsinha/medi-go/models"
 	"github.com/harshitrajsinha/medi-go/store"
-	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -54,7 +55,6 @@ func GenerateToken(email string, userId uuid.UUID) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	// Load JWT key
-	_ = godotenv.Load()
 	jwtKeyString := os.Getenv("JWT_KEY")
 
 	signedToken, err := token.SignedString([]byte(jwtKeyString))
@@ -67,23 +67,41 @@ func GenerateToken(email string, userId uuid.UUID) (string, error) {
 
 func (l *LoginRoutes) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var credentials models.Credentials
-	ctx := r.Context()
+
+	// panic recovery
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Error occured: ", r)
+			debug.PrintStack()
+		}
+	}()
 
 	if err := json.NewDecoder(r.Body).Decode(&credentials); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(Response{Code: http.StatusBadRequest, Message: "Invalid Request body for authorization"})
-		log.Println("Invalid Request body for authorization")
+		json.NewEncoder(w).Encode(Response{Code: http.StatusBadRequest, Message: "Invalid Request body for authentication"})
+		log.Println("Invalid Request body for authentication")
 		return
 	}
 
-	loginResponse, err := l.service.GetLoginInfo(ctx, &credentials)
+	credentials.Email = strings.TrimSpace(credentials.Email)
+	credentials.Password = strings.TrimSpace(credentials.Password)
+	credentials.Role = strings.TrimSpace(credentials.Role)
+
+	if credentials.Email == "" || credentials.Password == "" || credentials.Role == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(Response{Code: http.StatusBadRequest, Message: "Invalid Request body for authentication - email, password, role are mandatory fields"})
+		log.Println("Invalid Request body for authentication, either of email, password, role are missing")
+		return
+	}
+
+	loginResponse, err := l.service.GetLoginInfo(&credentials)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(Response{Code: http.StatusInternalServerError, Message: "Error occured during authentication"})
-		log.Println("Error occured during authentication")
-		return
+		panic(err)
 	}
 
 	// Verifying a password
@@ -91,24 +109,25 @@ func (l *LoginRoutes) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(Response{Code: http.StatusBadRequest, Message: "Incorrect email or password for authorization"})
-		log.Println("Incorrect username or password for authorization")
+		json.NewEncoder(w).Encode(Response{Code: http.StatusBadRequest, Message: "Incorrect email or password for authentication"})
+		log.Println("Incorrect username or password for authentication")
 		return
 	}
 
+	// Generate JWT token for authentication
 	tokenString, err := GenerateToken(credentials.Email, loginResponse.UserID)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(Response{Code: http.StatusInternalServerError, Message: "Failed to generate token for authorization"})
-		log.Println("Failed to generate token for authorization")
-		return
+		json.NewEncoder(w).Encode(Response{Code: http.StatusInternalServerError, Message: "Failed to generate token for authentication"})
+		log.Println("Failed to generate token for authentication")
+		panic(err)
 	}
 	resp := map[string]string{"token": tokenString}
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(Response{Code: http.StatusCreated, Message: "Authorization token generated successfully. Valid for next 30mins", Data: resp})
+	json.NewEncoder(w).Encode(Response{Code: http.StatusCreated, Message: "Authentication token generated successfully. Valid for next 30mins", Data: resp})
 
-	log.Println("Authorization token generated successfully")
+	log.Println("Authentication token generated successfully")
 }

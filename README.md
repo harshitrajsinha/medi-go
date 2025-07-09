@@ -59,10 +59,12 @@ cd medi-go
 Create .env file in root directory
 
 ```bash
+# For postgres docker image
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=yourstrongpassword
 POSTGRES_DB=yourfavouritedbname
 
+# Data storage
 DB_USER=postgres
 DB_NAME=yourfavouritedbname
 DB_PASS=yourstrongpassword

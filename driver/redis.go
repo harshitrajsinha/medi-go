@@ -12,6 +12,8 @@ import (
 
 func InitRedis() (*redis.Client, error) {
 
+	fmt.Println("Waiting for redis startup ...")
+
 	redisHost := os.Getenv("REDIS_HOST")
 	redisPort := os.Getenv("REDIS_PORT")
 

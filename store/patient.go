@@ -127,7 +127,7 @@ func (rec *Store) GetPatientByTokenID(token_id string) (interface{}, error) {
 		&queryData.Fullname, &queryData.Gender, &queryData.Age, &queryData.Contact, &queryData.Symptoms, &queryData.Treatment, &assignedDoctor, &queryData.TokenID, &queryData.UpdatedAt, &queryData.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return queryData, nil // return empty model
+			return queryData, errors.New("no data found based on request") // return empty model
 		}
 		return queryData, err // return empty model
 	}

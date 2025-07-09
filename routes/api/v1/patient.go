@@ -98,7 +98,7 @@ func (p *PatientRoutes) GetPatientByTokenID(w http.ResponseWriter, r *http.Reque
 
 		params := mux.Vars(r)
 		// Get token id
-		id := params["token_id"]
+		id := strings.TrimSpace(params["token_id"])
 
 		// 100000 (inclusive) → 999999 (inclusive)
 		if len(id) != 6 {
