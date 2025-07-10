@@ -29,11 +29,12 @@ var db *sql.DB
 var rdb *redis.Client
 
 type dbConfig struct {
-	User string `envconfig:"DB_USER"` // looks for 'DB_USER' in environment, tag key should match .env key
-	Host string `envconfig:"DB_HOST"`
-	Port string `envconfig:"DB_PORT"`
-	Pass string `envconfig:"DB_PASS"`
-	Name string `envconfig:"DB_NAME"`
+	User     string `envconfig:"DB_USER"` // looks for 'DB_USER' in environment, tag key should match .env key
+	Host     string `envconfig:"DB_HOST"`
+	Port     string `envconfig:"DB_PORT"`
+	Pass     string `envconfig:"DB_PASS"`
+	Name     string `envconfig:"DB_NAME"`
+	NeonConn string `envconfig:"NEON_CONNSTR"`
 }
 
 // Function to load data to database via schema file
@@ -64,7 +65,7 @@ func init() {
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}
-	dbConnStr := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=disable&connect_timeout=30", cfg.User, cfg.Pass, cfg.Host, cfg.Port, cfg.Name)
+	dbConnStr := cfg.NeonConn
 	dbDriver := "postgres"
 
 	// Get db client
