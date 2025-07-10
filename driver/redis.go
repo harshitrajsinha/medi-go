@@ -16,6 +16,7 @@ func InitRedis() (*redis.Client, error) {
 
 	redisHost := os.Getenv("REDIS_HOST")
 	redisPort := os.Getenv("REDIS_PORT")
+	redisPass := os.Getenv("REDIS_PASS")
 
 	if redisHost == "" {
 		redisHost = "redis" // fallback for local development
@@ -23,10 +24,12 @@ func InitRedis() (*redis.Client, error) {
 	if redisPort == "" {
 		redisPort = "6379" // fallback for local development
 	}
+
 	var rdb = redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%s", redisHost, redisPort),
-		Password: "", // no password by default
-		DB:       0,  // use default DB
+		Username: "default", // remove this field when running locally
+		Password: redisPass, // no password by default
+		DB:       0,         // use default DB
 	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
