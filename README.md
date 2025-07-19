@@ -14,10 +14,6 @@
 Frontend: https://medigo-frontend.vercel.app \
 Backend: https://medigo-7u9l.onrender.com/
 
-## Video Demo
-
-[Video Demo Link](https://riverside.fm/shared/exported-clip/97910da3b8c897d91dde)
-
 ## 👨‍🚀 Postman Collection Documentation
 
 [Postman Documentation URL](https://documenter.getpostman.com/view/40689865/2sB34kDdn6)
