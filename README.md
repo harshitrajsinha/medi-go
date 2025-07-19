@@ -2,18 +2,25 @@
 
 ![frontend](./frontend.png)
 
-## Requirements:
-
-### 🚀 To build a Golang web application that consists of a receptionist portal & doctor portal which performs the following tasks:
+### 🚀 A Golang web application that consists of a receptionist portal & doctor portal which performs the following tasks:
 
 - A single login page for both portals.
 - Receptionists can register a new patient & perform CRUD operations.
-- Doctors can view registered patient-related details and should be able to update the data.
+- Doctors can view registered patient-related details and diagnose based on symptoms
+- Gemini AI to generate diagnosis based on symptoms.
 
 ## Deployment links
 
 Frontend: https://medigo-frontend.vercel.app \
 Backend: https://medigo-7u9l.onrender.com/
+
+## Video Demo
+
+[Video Demo Link](https://riverside.fm/shared/exported-clip/97910da3b8c897d91dde)
+
+## 👨‍🚀 Postman Collection Documentation
+
+[Postman Documentation URL](https://documenter.getpostman.com/view/40689865/2sB34kDdn6)
 
 ## ✨Features
 
@@ -28,18 +35,12 @@ Backend: https://medigo-7u9l.onrender.com/
 ## 📦 Tech Stack
 
 - **Backend** : Golang
+- **AI Agent**: Gemini
 - **Frontend** : HTML/CSS/JavaScript
 - **Database** : PostgreSQL
 - **Caching** : Redis
+- **Containerization** : Docker
 - **Deployment** : Vercel (Frontend) + Render (Backend)
-
-## 👨‍🚀 Postman Collection
-
-[Postman collection URL](https://www.postman.com/docking-module-cosmonaut-41943639/workspace/harshitraj-public-workspace/collection/40689865-dae91a9f-35fc-4337-9e23-1282d4a57dbe?action=share&creator=40689865)
-
-## Video Demo
-
-[Video Demo Link](https://riverside.fm/shared/exported-clip/97910da3b8c897d91dde)
 
 ## How to run this application locally
 
