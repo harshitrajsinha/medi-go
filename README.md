@@ -13,7 +13,7 @@
 ## Deployment links
 
 Frontend: https://medigo-frontend.vercel.app \
-Backend: https://app-w0ew.onrender.com
+Backend: https://medigo-7u9l.onrender.com/
 
 ## ✨Features
 

@@ -65,7 +65,13 @@ func init() {
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}
-	dbConnStr := cfg.NeonConn
+
+	var dbConnStr string
+	if cfg.NeonConn != "" {
+		dbConnStr = cfg.NeonConn
+	} else {
+		dbConnStr = fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=disable&connect_timeout=30", cfg.User, cfg.Pass, cfg.Host, cfg.Port, cfg.Name)
+	}
 	dbDriver := "postgres"
 
 	// Get db client
