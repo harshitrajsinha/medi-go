@@ -1,6 +1,6 @@
 # MediGo - A Hospital Management System written in Go
 
-![frontend](./frontend.png)
+![frontend](./public/images/frontend.png)
 
 ### 🚀 A Golang web application that consists of a receptionist portal & doctor portal which performs the following tasks:
 
@@ -81,3 +81,15 @@ Run the following command in your bash terminal
 ```bash
 docker-compose up --build
 ```
+
+## Receptionist Dashboard
+
+![Screenshot](./public/images/Screenshot%202025-07-19%20185445.png)
+
+## Doctor Diagnosis (using Gemini AI)
+
+![Screenshot](./public/images/Screenshot%202025-07-20%20145456.png)
+
+## Patient Report
+
+![Screenshot](./public/images/Screenshot%202025-07-20%20145535.png)
