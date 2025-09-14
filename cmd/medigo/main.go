@@ -110,7 +110,7 @@ func main() {
 	patientStore := store.NewStore(db, rdb)
 	apiRoutes := apiRoutesV1.NewAPIRoutes(patientStore)
 
-	// router.Use(middleware.OriginValidator)
+	router.Use(middleware.OriginValidator)
 
 	// endpoint to check server health
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
