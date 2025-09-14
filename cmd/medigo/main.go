@@ -110,14 +110,14 @@ func main() {
 	patientStore := store.NewStore(db, rdb)
 	apiRoutes := apiRoutesV1.NewAPIRoutes(patientStore)
 
-	router.Use(middleware.OriginValidator)
-
 	// endpoint to check server health
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{"message": "Server is functioning"})
 	}).Methods("GET")
+
+	router.Use(middleware.OriginValidator)
 
 	// Public routes for patient details
 	router.HandleFunc("/api/v1/patient/{token_id}", apiRoutes.GetPatientByTokenID).Methods(http.MethodGet)
