@@ -17,7 +17,7 @@ RUN go mod download
 COPY . .
 
 # Build the Go app
-RUN go build -o main.exe ./cmd/medigo/main.go
+RUN go build -o main ./cmd/medigo/main.go
 
 # Final minimal image
 FROM alpine:latest
@@ -25,7 +25,7 @@ FROM alpine:latest
 WORKDIR /root/
 
 # Copy the binary from builder
-COPY --from=builder /app/main.exe .
+COPY --from=builder /app/main .
 
 # Expose (GraphQL/REST) server port, if present
 EXPOSE 8080

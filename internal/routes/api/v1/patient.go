@@ -13,7 +13,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/harshitrajsinha/medi-go/internal/models"
-	"github.com/harshitrajsinha/medi-go/internal/store"
 	"golang.org/x/time/rate"
 )
 
@@ -23,18 +22,8 @@ var (
 	mu      sync.Mutex
 )
 
-type PatientRoutes struct {
-	service *store.Store
-}
-
-func NewPatientRoutes(service *store.Store) *PatientRoutes {
-	return &PatientRoutes{
-		service: service,
-	}
-}
-
 // GET: Return list of patients based on pagination
-func (p *PatientRoutes) GetAllPatients(w http.ResponseWriter, r *http.Request) {
+func (p *APIRoutes) GetAllPatients(w http.ResponseWriter, r *http.Request) {
 
 	// panic recovery
 	defer func() {
@@ -75,7 +64,7 @@ func (p *PatientRoutes) GetAllPatients(w http.ResponseWriter, r *http.Request) {
 }
 
 // GET: Return patient details from token ID
-func (p *PatientRoutes) GetPatientByTokenID(w http.ResponseWriter, r *http.Request) {
+func (p *APIRoutes) GetPatientByTokenID(w http.ResponseWriter, r *http.Request) {
 
 	// panic recovery
 	defer func() {
@@ -122,7 +111,7 @@ func (p *PatientRoutes) GetPatientByTokenID(w http.ResponseWriter, r *http.Reque
 }
 
 // GET: Return list of patients based on doctor ID
-func (p *PatientRoutes) GetAllPatientsByDocID(w http.ResponseWriter, r *http.Request) {
+func (p *APIRoutes) GetAllPatientsByDocID(w http.ResponseWriter, r *http.Request) {
 
 	// panic recovery
 	defer func() {
@@ -177,7 +166,7 @@ func (p *PatientRoutes) GetAllPatientsByDocID(w http.ResponseWriter, r *http.Req
 }
 
 // POST: Return newly created patient's token ID
-func (p *PatientRoutes) CreatePatient(w http.ResponseWriter, r *http.Request) {
+func (p *APIRoutes) CreatePatient(w http.ResponseWriter, r *http.Request) {
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -256,7 +245,7 @@ func (p *PatientRoutes) CreatePatient(w http.ResponseWriter, r *http.Request) {
 }
 
 // PUT: Updates existing patient record
-func (p *PatientRoutes) UpdatePatient(w http.ResponseWriter, r *http.Request) {
+func (p *APIRoutes) UpdatePatient(w http.ResponseWriter, r *http.Request) {
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -345,7 +334,7 @@ func (p *PatientRoutes) UpdatePatient(w http.ResponseWriter, r *http.Request) {
 }
 
 // PATCH: Updates existing patient record field
-func (p *PatientRoutes) UpdatePatientPartial(w http.ResponseWriter, r *http.Request) {
+func (p *APIRoutes) UpdatePatientPartial(w http.ResponseWriter, r *http.Request) {
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -433,7 +422,7 @@ func (p *PatientRoutes) UpdatePatientPartial(w http.ResponseWriter, r *http.Requ
 }
 
 // DELETE: Delete patient record
-func (p *PatientRoutes) DeletePatient(w http.ResponseWriter, r *http.Request) {
+func (p *APIRoutes) DeletePatient(w http.ResponseWriter, r *http.Request) {
 
 	mu.Lock()
 	defer mu.Unlock()

@@ -9,21 +9,10 @@ import (
 
 	"github.com/harshitrajsinha/medi-go/internal/auth"
 	"github.com/harshitrajsinha/medi-go/internal/models"
-	"github.com/harshitrajsinha/medi-go/internal/store"
 )
 
-type LoginRoutes struct {
-	service *store.Store
-}
-
-func NewLoginRoutes(service *store.Store) *LoginRoutes {
-	return &LoginRoutes{
-		service: service,
-	}
-}
-
 // POST: Return auth token based on credentials
-func (l *LoginRoutes) LoginHandler(w http.ResponseWriter, r *http.Request) {
+func (l *APIRoutes) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var credentials models.Credentials
 
 	// panic recovery

@@ -13,7 +13,6 @@ import (
 	driver "github.com/harshitrajsinha/medi-go/internal/db"
 	middleware "github.com/harshitrajsinha/medi-go/internal/middleware"
 	apiRoutesV1 "github.com/harshitrajsinha/medi-go/internal/routes/api/v1"
-	loginRoute "github.com/harshitrajsinha/medi-go/internal/routes/api/v1"
 	"github.com/harshitrajsinha/medi-go/internal/store"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
@@ -109,10 +108,9 @@ func main() {
 
 	// Dependency Injection for modularity
 	patientStore := store.NewStore(db, rdb)
-	loginRoutes := loginRoute.NewLoginRoutes(patientStore)
-	patientRoutes := apiRoutesV1.NewPatientRoutes(patientStore)
+	apiRoutes := apiRoutesV1.NewAPIRoutes(patientStore)
 
-	router.Use(middleware.OriginValidator)
+	// router.Use(middleware.OriginValidator)
 
 	// endpoint to check server health
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -122,19 +120,19 @@ func main() {
 	}).Methods("GET")
 
 	// Public routes for patient details
-	router.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.GetPatientByTokenID).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/patient/{token_id}", apiRoutes.GetPatientByTokenID).Methods(http.MethodGet)
 
-	router.HandleFunc("/api/v1/login", loginRoutes.LoginHandler).Methods(http.MethodPost)
+	router.HandleFunc("/api/v1/login", apiRoutes.LoginHandler).Methods(http.MethodPost)
 	protectedRouter := router.PathPrefix("/").Subrouter() // creating subrouter for path "/" that will require authentication
 	protectedRouter.Use(middleware.AuthMiddleware)
 
 	// Protected Routes
-	protectedRouter.HandleFunc("/api/v1/patients", patientRoutes.GetAllPatients).Methods(http.MethodGet)
-	protectedRouter.HandleFunc("/api/v1/patientbydoc/{doctor_id}", patientRoutes.GetAllPatientsByDocID).Methods(http.MethodGet)
-	protectedRouter.HandleFunc("/api/v1/patient", patientRoutes.CreatePatient).Methods(http.MethodPost)
-	protectedRouter.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.UpdatePatient).Methods(http.MethodPut)
-	protectedRouter.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.UpdatePatientPartial).Methods(http.MethodPatch)
-	protectedRouter.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.DeletePatient).Methods(http.MethodDelete)
+	protectedRouter.HandleFunc("/api/v1/patients", apiRoutes.GetAllPatients).Methods(http.MethodGet)
+	protectedRouter.HandleFunc("/api/v1/patientbydoc/{doctor_id}", apiRoutes.GetAllPatientsByDocID).Methods(http.MethodGet)
+	protectedRouter.HandleFunc("/api/v1/patient", apiRoutes.CreatePatient).Methods(http.MethodPost)
+	protectedRouter.HandleFunc("/api/v1/patient/{token_id}", apiRoutes.UpdatePatient).Methods(http.MethodPut)
+	protectedRouter.HandleFunc("/api/v1/patient/{token_id}", apiRoutes.UpdatePatientPartial).Methods(http.MethodPatch)
+	protectedRouter.HandleFunc("/api/v1/patient/{token_id}", apiRoutes.DeletePatient).Methods(http.MethodDelete)
 
 	port := os.Getenv("PORT")
 	if port == "" {
