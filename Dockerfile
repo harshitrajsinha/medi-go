@@ -27,8 +27,7 @@ WORKDIR /root/
 # Copy the binary from builder
 COPY --from=builder /app/main .
 
-# Expose (GraphQL/REST) server port, if present
-EXPOSE 8080
+EXPOSE 8000
 
 # Run the app
 CMD ["./main"]

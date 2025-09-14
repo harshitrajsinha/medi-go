@@ -29,6 +29,7 @@ services:
       REDIS_PORT: ${REDIS_PORT}
       NEON_CONNSTR: ${NEON_CONNSTR}
       ALLOWED_ORIGIN: ${ALLOWED_ORIGIN}
+      PORT: ${PORT}
     depends_on:
       db:
         condition: service_healthy
