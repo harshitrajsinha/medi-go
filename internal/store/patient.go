@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/harshitrajsinha/medi-go/models"
+	"github.com/harshitrajsinha/medi-go/internal/models"
 )
 
 type patientQueryResponse struct {

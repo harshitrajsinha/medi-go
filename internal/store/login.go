@@ -6,7 +6,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/harshitrajsinha/medi-go/models"
+	"github.com/harshitrajsinha/medi-go/internal/models"
 )
 
 func (rec *Store) GetLoginInfo(loginReq *models.Credentials) (LoginResponse, error) {

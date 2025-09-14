@@ -11,8 +11,8 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
-	"github.com/harshitrajsinha/medi-go/models"
-	"github.com/harshitrajsinha/medi-go/store"
+	"github.com/harshitrajsinha/medi-go/internal/models"
+	"github.com/harshitrajsinha/medi-go/internal/store"
 	"golang.org/x/crypto/bcrypt"
 )
 

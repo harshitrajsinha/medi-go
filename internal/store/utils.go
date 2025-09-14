@@ -2,10 +2,14 @@ package store
 
 import (
 	"database/sql"
+	"embed"
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
+
+//go:embed schema.sql
+var SchemaFS embed.FS
 
 type Store struct {
 	db  *sql.DB

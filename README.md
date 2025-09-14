@@ -1,6 +1,6 @@
 # MediGo - A Hospital Management System written in Go
 
-![frontend](./public/images/frontend.png)
+![frontend](./assets/images/frontend.png)
 
 ### 🚀 A Golang web application that consists of a receptionist portal & doctor portal which performs the following tasks:
 
@@ -31,7 +31,7 @@ Backend: https://medigo-7u9l.onrender.com/
 ## 📦 Tech Stack
 
 - **Backend** : Golang
-- **AI Agent**: Gemini
+- **AI Assitant**: Gemini
 - **Frontend** : HTML/CSS/JavaScript
 - **Database** : PostgreSQL
 - **Caching** : Redis
@@ -84,12 +84,12 @@ docker-compose up --build
 
 ## Receptionist Dashboard
 
-![Screenshot](./public/images/Screenshot%202025-07-19%20185445.png)
+![Screenshot](./assets/images/Screenshot%202025-07-19%20185445.png)
 
 ## Doctor Diagnosis (using Gemini AI)
 
-![Screenshot](./public/images/Screenshot%202025-07-20%20145456.png)
+![Screenshot](./assets/images/Screenshot%202025-07-20%20145456.png)
 
 ## Patient Report
 
-![Screenshot](./public/images/Screenshot%202025-07-20%20145535.png)
+![Screenshot](./assets/images/Screenshot%202025-07-20%20145535.png)

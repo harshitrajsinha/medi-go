@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"embed"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -11,11 +10,11 @@ import (
 	"runtime/debug"
 
 	"github.com/gorilla/mux"
-	"github.com/harshitrajsinha/medi-go/driver"
-	"github.com/harshitrajsinha/medi-go/middleware"
-	loginRoutes "github.com/harshitrajsinha/medi-go/routes"
-	routesV1 "github.com/harshitrajsinha/medi-go/routes/api/v1"
-	"github.com/harshitrajsinha/medi-go/store"
+	middleware "github.com/harshitrajsinha/medi-go/internal/auth"
+	driver "github.com/harshitrajsinha/medi-go/internal/db"
+	loginRoutes "github.com/harshitrajsinha/medi-go/internal/routes"
+	routesV1 "github.com/harshitrajsinha/medi-go/internal/routes/api/v1"
+	"github.com/harshitrajsinha/medi-go/internal/store"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
@@ -23,8 +22,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-//go:embed store/schema.sql
-var schemaFS embed.FS
 var db *sql.DB
 var rdb *redis.Client
 
@@ -41,7 +38,7 @@ type dbConfig struct {
 func loadDataToDatabase(dbClient *sql.DB) error {
 
 	// Read file content
-	sqlFile, err := schemaFS.ReadFile("store/schema.sql")
+	sqlFile, err := store.SchemaFS.ReadFile("schema.sql")
 	fmt.Println("...loading schema file")
 	if err != nil {
 		return err
