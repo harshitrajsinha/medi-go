@@ -9,6 +9,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lib/pq v1.10.9
 	github.com/redis/go-redis/v9 v9.8.0
+	github.com/rs/cors v1.11.1
 	golang.org/x/crypto v0.38.0
 )
 

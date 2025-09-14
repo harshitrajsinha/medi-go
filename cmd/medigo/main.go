@@ -17,19 +17,22 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
+	"github.com/rs/cors"
 	"golang.org/x/crypto/bcrypt"
 )
 
 var db *sql.DB
 var rdb *redis.Client
+var allowedOrigin string
 
 type dbConfig struct {
-	User     string `envconfig:"DB_USER"` // looks for 'DB_USER' in environment, tag key should match .env key
-	Host     string `envconfig:"DB_HOST"`
-	Port     string `envconfig:"DB_PORT"`
-	Pass     string `envconfig:"DB_PASS"`
-	Name     string `envconfig:"DB_NAME"`
-	NeonConn string `envconfig:"NEON_CONNSTR"`
+	User          string `envconfig:"DB_USER"` // looks for 'DB_USER' in environment, tag key should match .env key
+	Host          string `envconfig:"DB_HOST"`
+	Port          string `envconfig:"DB_PORT"`
+	Pass          string `envconfig:"DB_PASS"`
+	Name          string `envconfig:"DB_NAME"`
+	NeonConn      string `envconfig:"NEON_CONNSTR"`
+	AllowedOrigin string `envconfig:"ALLOWED_ORIGIN"`
 }
 
 // Function to load data to database via schema file
@@ -60,6 +63,8 @@ func init() {
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}
+
+	allowedOrigin = cfg.AllowedOrigin
 
 	var dbConnStr string
 	if cfg.NeonConn != "" {
@@ -120,7 +125,7 @@ func main() {
 	router.Use(middleware.OriginValidator)
 
 	// Public routes for patient details
-	router.HandleFunc("/api/v1/patient/{token_id}", apiRoutes.GetPatientByTokenID).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/patients/{token_id}", apiRoutes.GetPatientByTokenID).Methods(http.MethodGet)
 
 	router.HandleFunc("/api/v1/login", apiRoutes.LoginHandler).Methods(http.MethodPost)
 	protectedRouter := router.PathPrefix("/").Subrouter() // creating subrouter for path "/" that will require authentication
@@ -128,11 +133,19 @@ func main() {
 
 	// Protected Routes
 	protectedRouter.HandleFunc("/api/v1/patients", apiRoutes.GetAllPatients).Methods(http.MethodGet)
+	protectedRouter.HandleFunc("/api/v1/patients", apiRoutes.CreatePatient).Methods(http.MethodPost)
+	protectedRouter.HandleFunc("/api/v1/patients/{token_id}", apiRoutes.UpdatePatient).Methods(http.MethodPut)
+	protectedRouter.HandleFunc("/api/v1/patients/{token_id}", apiRoutes.UpdatePatientPartial).Methods(http.MethodPatch)
+	protectedRouter.HandleFunc("/api/v1/patients/{token_id}", apiRoutes.DeletePatient).Methods(http.MethodDelete)
 	protectedRouter.HandleFunc("/api/v1/patientbydoc/{doctor_id}", apiRoutes.GetAllPatientsByDocID).Methods(http.MethodGet)
-	protectedRouter.HandleFunc("/api/v1/patient", apiRoutes.CreatePatient).Methods(http.MethodPost)
-	protectedRouter.HandleFunc("/api/v1/patient/{token_id}", apiRoutes.UpdatePatient).Methods(http.MethodPut)
-	protectedRouter.HandleFunc("/api/v1/patient/{token_id}", apiRoutes.UpdatePatientPartial).Methods(http.MethodPatch)
-	protectedRouter.HandleFunc("/api/v1/patient/{token_id}", apiRoutes.DeletePatient).Methods(http.MethodDelete)
+
+	// Enable CORS
+	handler := cors.New(cors.Options{
+		AllowedOrigins:   []string{allowedOrigin},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+	}).Handler(router)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -140,7 +153,7 @@ func main() {
 	}
 
 	log.Println("Server listening on PORT ", port)
-	log.Fatal(http.ListenAndServe(":"+port, router))
+	log.Fatal(http.ListenAndServe(":"+port, handler))
 
 }
 

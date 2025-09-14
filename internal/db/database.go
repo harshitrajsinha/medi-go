@@ -37,6 +37,7 @@ func InitDB(dbDriver string, connString string) (*sql.DB, error) {
 
 	// check if db connection is successful
 	if err := db.PingContext(ctx); err != nil {
+		db.Close()
 		log.Printf("Error connecting to the database: %v", err)
 		return nil, err
 	}

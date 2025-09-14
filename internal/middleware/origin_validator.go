@@ -14,6 +14,11 @@ type allowedOrigins struct {
 func OriginValidator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
+		if r.URL.Path == "/" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		var originCfg allowedOrigins
 
 		err := envconfig.Process("", &originCfg) // load env from program's environment to declared struct
