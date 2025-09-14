@@ -1,67 +1,48 @@
-package middleware
+package auth
 
 import (
-	"context"
-	"encoding/json"
-	"log"
-	"net/http"
 	"os"
-	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt"
-	"github.com/joho/godotenv"
+	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
-type Claims struct {
-	Email string `json:"email"`
+type CustomClaims struct {
+	Email  string    `json:"email"`
+	UserID uuid.UUID `json:"userid"`
 	jwt.StandardClaims
 }
 
-func generateKey() []byte {
-	_ = godotenv.Load()
-	jwtKeyString := os.Getenv("JWT_KEY")
-	return []byte(jwtKeyString)
+func CheckPassowrd(hashedPassword string, password string) error {
+	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	return err
 }
 
-// Middleware to validate authentication token from request
+func GenerateToken(email string, userId uuid.UUID) (string, error) {
 
-func AuthMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(struct {
-				Code    int    `json:"code"`
-				Message string `json:"message"`
-			}{
-				Code: http.StatusUnauthorized, Message: "Authorization header required",
-			})
-			log.Println("Authorization header missing")
-			return
-		}
+	expiration := time.Now().Add(30 * time.Minute) // Expiration set as 30 minute
 
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		claims := &Claims{}
-		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-			return generateKey(), nil
-		})
+	claims := &CustomClaims{
+		Email:  email,
+		UserID: userId,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expiration.Unix(),
+			IssuedAt:  time.Now().Unix(),
+			Subject:   email,
+		},
+	}
 
-		if err != nil || !token.Valid {
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(struct {
-				Code    int    `json:"code"`
-				Message string `json:"message"`
-			}{
-				Code: http.StatusUnauthorized, Message: "Invalid token",
-			})
-			log.Println("Invalid token")
-			return
-		}
-		ctx := context.WithValue(r.Context(), "email", claims.Email)
-		next.ServeHTTP(w, r.WithContext(ctx))
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	})
+	// Load JWT key
+	jwtKeyString := os.Getenv("JWT_KEY")
 
+	signedToken, err := token.SignedString([]byte(jwtKeyString))
+	if err != nil {
+		return "", err
+	}
+
+	return signedToken, nil
 }

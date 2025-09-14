@@ -33,12 +33,6 @@ func NewPatientRoutes(service *store.Store) *PatientRoutes {
 	}
 }
 
-type Response struct {
-	Code    int         `json:"code"`
-	Message string      `json:"message,omitempty"`
-	Data    interface{} `json:"data,omitempty"`
-}
-
 // GET: Return list of patients based on pagination
 func (p *PatientRoutes) GetAllPatients(w http.ResponseWriter, r *http.Request) {
 

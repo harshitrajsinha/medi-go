@@ -10,15 +10,14 @@ import (
 	"runtime/debug"
 
 	"github.com/gorilla/mux"
-	middleware "github.com/harshitrajsinha/medi-go/internal/auth"
 	driver "github.com/harshitrajsinha/medi-go/internal/db"
-	loginRoutes "github.com/harshitrajsinha/medi-go/internal/routes"
-	routesV1 "github.com/harshitrajsinha/medi-go/internal/routes/api/v1"
+	middleware "github.com/harshitrajsinha/medi-go/internal/middleware"
+	apiRoutesV1 "github.com/harshitrajsinha/medi-go/internal/routes/api/v1"
+	loginRoute "github.com/harshitrajsinha/medi-go/internal/routes/api/v1"
 	"github.com/harshitrajsinha/medi-go/internal/store"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
-	"github.com/rs/cors"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -110,8 +109,10 @@ func main() {
 
 	// Dependency Injection for modularity
 	patientStore := store.NewStore(db, rdb)
-	loginRoutes := loginRoutes.NewLoginRoutes(patientStore)
-	patientRoutes := routesV1.NewPatientRoutes(patientStore)
+	loginRoutes := loginRoute.NewLoginRoutes(patientStore)
+	patientRoutes := apiRoutesV1.NewPatientRoutes(patientStore)
+
+	// router.Use(middleware.OriginValidator)
 
 	// endpoint to check server health
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -135,21 +136,13 @@ func main() {
 	protectedRouter.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.UpdatePatientPartial).Methods(http.MethodPatch)
 	protectedRouter.HandleFunc("/api/v1/patient/{token_id}", patientRoutes.DeletePatient).Methods(http.MethodDelete)
 
-	// Enable CORS
-	handler := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000", "https://medigo-frontend.vercel.app"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Content-Type", "Authorization"},
-		AllowCredentials: true,
-	}).Handler(router)
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8000"
 	}
 
 	log.Println("Server listening on PORT ", port)
-	log.Fatal(http.ListenAndServe(":"+port, handler))
+	log.Fatal(http.ListenAndServe(":"+port, router))
 
 }
 
