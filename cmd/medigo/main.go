@@ -112,7 +112,7 @@ func main() {
 	loginRoutes := loginRoute.NewLoginRoutes(patientStore)
 	patientRoutes := apiRoutesV1.NewPatientRoutes(patientStore)
 
-	// router.Use(middleware.OriginValidator)
+	router.Use(middleware.OriginValidator)
 
 	// endpoint to check server health
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
