@@ -2,6 +2,7 @@ package auth
 
 import (
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -9,10 +10,20 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type Claims struct {
+	Email string `json:"email"`
+	jwt.StandardClaims
+}
+
 type CustomClaims struct {
 	Email  string    `json:"email"`
 	UserID uuid.UUID `json:"userid"`
 	jwt.StandardClaims
+}
+
+func generateKey() []byte {
+	jwtKeyString := os.Getenv("JWT_KEY")
+	return []byte(jwtKeyString)
 }
 
 func CheckPassowrd(hashedPassword string, password string) error {
@@ -45,4 +56,19 @@ func GenerateToken(email string, userId uuid.UUID) (string, error) {
 	}
 
 	return signedToken, nil
+}
+
+func VerifyToken(authHeader string) (*Claims, error) {
+
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+	claims := &Claims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return generateKey(), nil
+	})
+
+	if !token.Valid {
+		return nil, err
+	}
+
+	return claims, nil
 }

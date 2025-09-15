@@ -1,40 +1,37 @@
 package middleware
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 
-	"github.com/kelseyhightower/envconfig"
+	"github.com/harshitrajsinha/medi-go/config"
 )
-
-type allowedOrigins struct {
-	AllowedOrigin string `envconfig:"ALLOWED_ORIGIN"`
-}
 
 func OriginValidator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		var allowedOrigin string
 
 		if r.URL.Path == "/" {
 			next.ServeHTTP(w, r)
 			return
 		}
-
-		var originCfg allowedOrigins
-
-		err := envconfig.Process("", &originCfg) // load env from program's environment to declared struct
-		if err != nil {
-			log.Fatalf("failed to load config: %v", err)
-		}
-
 		origin := r.Header.Get("Origin")
 
+		allowedOriginWebsite, err := config.AllowedOrigin()
+		if err != nil {
+			fmt.Println(err)
+			allowedOrigin = ""
+		}
+		allowedOrigin = allowedOriginWebsite.AllowedOrigin
+
 		// Reject if no Origin header or unregistered origin
-		if originCfg.AllowedOrigin != origin {
+		if origin == "" || allowedOrigin != origin {
 			http.Error(w, "Unauthorized or restricted origin", http.StatusUnauthorized)
 			return
 		}
 
-		// Set CORS headers only for allowed origins
+		// Setting CORS headers only for allowed origins
 		w.Header().Set("Access-Control-Allow-Origin", origin)
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")

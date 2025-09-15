@@ -7,11 +7,15 @@ import (
 	"log"
 	"time"
 
+	"github.com/harshitrajsinha/medi-go/internal/store"
 	_ "github.com/lib/pq"
 )
 
-func InitDB(dbDriver string, connString string) (*sql.DB, error) {
+type DBClient struct {
+	*sql.DB
+}
 
+func InitDB(dbDriver string, connString string) (*DBClient, error) {
 	var db *sql.DB
 	var err error
 
@@ -44,6 +48,24 @@ func InitDB(dbDriver string, connString string) (*sql.DB, error) {
 
 	fmt.Println("Successfully connected to database")
 
-	return db, nil
+	return &DBClient{DB: db}, nil
 
+}
+
+// Function to load data to database via schema file
+func (rec *DBClient) LoadDataToDatabase(filename string) error {
+
+	// Read file content
+	sqlFile, err := store.SchemaFS.ReadFile(filename)
+	fmt.Println("...loading schema file")
+	if err != nil {
+		return err
+	}
+
+	// Execute file content (queries)
+	_, err = rec.Exec(string(sqlFile))
+	if err != nil {
+		return err
+	}
+	return nil
 }
