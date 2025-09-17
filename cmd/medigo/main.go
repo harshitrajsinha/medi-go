@@ -136,7 +136,7 @@ func main() {
 	protectedRouter.HandleFunc("/patients/{token_id}", apiRoutes.UpdatePatient).Methods(http.MethodPut)
 	protectedRouter.HandleFunc("/patients/{token_id}", apiRoutes.UpdatePatientPartial).Methods(http.MethodPatch)
 	protectedRouter.HandleFunc("/patients/{token_id}", apiRoutes.DeletePatient).Methods(http.MethodDelete)
-	protectedRouter.HandleFunc("/patients/{doctor_id}", apiRoutes.GetAllPatientsByDocID).Methods(http.MethodGet)
+	protectedRouter.HandleFunc("/doctors/{doctor_id}", apiRoutes.GetAllPatientsByDocID).Methods(http.MethodGet)
 
 	// Enable CORS
 	allowedOriginWebsite, err := config.AllowedOrigin()
