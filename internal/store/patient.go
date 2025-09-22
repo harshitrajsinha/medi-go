@@ -14,16 +14,17 @@ import (
 )
 
 type patientQueryResponse struct {
-	Fullname   string `json:"fullname,omitempty"`
-	Gender     string `json:"gender,omitempty"`
-	Age        int    `json:"age,omitempty"`
-	Contact    string `json:"contact,omitempty"`
-	Symptoms   string `json:"symptoms,omitempty"`
-	Treatment  string `json:"treatment,omitempty"`
-	AssignedTo string `json:"assigned_to,omitempty"`
-	TokenID    string `json:"token_id,omitempty"`
-	CreatedAt  string `json:"created_at,omitempty"`
-	UpdatedAt  string `json:"updated_at,omitempty"`
+	Fullname     string `json:"fullname,omitempty"`
+	Gender       string `json:"gender,omitempty"`
+	Age          int    `json:"age,omitempty"`
+	Contact      string `json:"contact,omitempty"`
+	Symptoms     string `json:"symptoms,omitempty"`
+	Treatment    string `json:"treatment,omitempty"`
+	AssignedTo   string `json:"assigned_to,omitempty"`
+	AssignedToID string `json:"assigned_to_id,omitempty"`
+	TokenID      string `json:"token_id,omitempty"`
+	CreatedAt    string `json:"created_at,omitempty"`
+	UpdatedAt    string `json:"updated_at,omitempty"`
 }
 
 // Queries list of patients
@@ -131,14 +132,13 @@ func (rec *Store) GetAllPatientsByDoc(doctorID uuid.UUID, limit int32, offset in
 // Queries patient details based on token ID
 func (rec *Store) GetPatientByTokenID(token_id string) (interface{}, error) {
 	var queryData patientQueryResponse
-	var assignedDoctor string
 	// var registeredBy string
 
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second) // if database takes too long, the query should be cancelled automatically after 45 seconds
 	defer cancel()
 
 	err := rec.db.QueryRowContext(ctx, "SELECT fullname, gender, age, contact, symptoms, treatment, assigned_to, token_id, updated_at, created_at FROM patient WHERE token_id=$1", token_id).Scan(
-		&queryData.Fullname, &queryData.Gender, &queryData.Age, &queryData.Contact, &queryData.Symptoms, &queryData.Treatment, &assignedDoctor, &queryData.TokenID, &queryData.UpdatedAt, &queryData.CreatedAt)
+		&queryData.Fullname, &queryData.Gender, &queryData.Age, &queryData.Contact, &queryData.Symptoms, &queryData.Treatment, &queryData.AssignedToID, &queryData.TokenID, &queryData.UpdatedAt, &queryData.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return queryData, errors.New("no data found based on request") // return empty model
@@ -147,7 +147,7 @@ func (rec *Store) GetPatientByTokenID(token_id string) (interface{}, error) {
 	}
 
 	// Get Assigned doctor name
-	doctorData, err := rec.GetDoctorById(assignedDoctor)
+	doctorData, err := rec.GetDoctorById(queryData.AssignedToID)
 	if err != nil {
 		queryData.AssignedTo = "NA"
 	} else {
@@ -162,30 +162,12 @@ func (rec *Store) GetPatientByTokenID(token_id string) (interface{}, error) {
 func (rec *Store) CreatePatient(patientMod *models.Patient) (int64, error) {
 
 	var tokenID int64
+	var err error
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second) // if database takes too long, the query should be cancelled automatically after 45 seconds
 	defer cancel()
 
-	// Begin DB transaction
-	tx, err := rec.db.BeginTx(ctx, nil)
-	if err != nil {
-		log.Println("Error while inserting data ", err)
-		return -1, err
-	}
-
-	defer func() {
-		if err != nil {
-			if rbErr := tx.Rollback(); rbErr != nil {
-				log.Println("Transaction rollback error: ", rbErr)
-			}
-		} else {
-			if cmErr := tx.Commit(); cmErr != nil {
-				log.Println("Commit rollback error: ", cmErr)
-			}
-		}
-	}()
-
 	var query string = "INSERT INTO patient (fullname, gender, age, contact, symptoms, assigned_to, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING token_id"
-	err = tx.QueryRowContext(ctx, query, patientMod.Fullname, patientMod.Gender, patientMod.Age, patientMod.Contact, patientMod.Symptoms, patientMod.Assigned_to, patientMod.Created_by).Scan(&tokenID)
+	err = rec.db.QueryRowContext(ctx, query, patientMod.Fullname, patientMod.Gender, patientMod.Age, patientMod.Contact, patientMod.Symptoms, patientMod.Assigned_to, patientMod.Created_by).Scan(&tokenID)
 
 	if err != nil {
 		log.Println("Error while inserting data ", err)
@@ -206,25 +188,6 @@ func (rec *Store) UpdatePatient(tokenID string, patientReq *models.Patient) (int
 
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second) // if database takes too long, the query should be cancelled automatically after 45 seconds
 	defer cancel()
-
-	// DB transaction
-	tx, err := rec.db.BeginTx(ctx, nil)
-	if err != nil {
-		log.Println("Error while updating data ", err)
-		return -1, err
-	}
-
-	defer func() {
-		if err != nil {
-			if rbErr := tx.Rollback(); rbErr != nil {
-				log.Printf("Transaction rollback error: %v\n", rbErr)
-			}
-		} else {
-			if cmErr := tx.Commit(); cmErr != nil {
-				log.Printf("Transaction commit error: %v\n", cmErr)
-			}
-		}
-	}()
 
 	var query strings.Builder
 	var args []interface{}
@@ -303,46 +266,30 @@ func (rec *Store) UpdatePatient(tokenID string, patientReq *models.Patient) (int
 	query.WriteString(fmt.Sprintf("WHERE token_id=$%d ", argCount))
 	args = append(args, tokenID)
 
-	result, err := tx.ExecContext(ctx, query.String(), args...)
+	result, err := rec.db.ExecContext(ctx, query.String(), args...)
 	if err != nil {
 		log.Println("Error while updating data ", err)
 		return -1, err
 	}
 
-	rowAffected, err := result.RowsAffected()
+	rowAffected, _ := result.RowsAffected()
 	return rowAffected, nil
 }
 
 // Queries DELETE to remove patient record
 func (rec *Store) DeletePatient(tokenID string) (int64, error) {
 
+	var err error
+
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second) // if database takes too long, the query should be cancelled automatically after 45 seconds
 	defer cancel()
 
-	// DB transaction
-	tx, err := rec.db.BeginTx(ctx, nil)
-	if err != nil {
-		return -1, err
-	}
-
-	defer func() {
-		if err != nil {
-			if rbErr := tx.Rollback(); rbErr != nil {
-				log.Println("Transaction rollback error: ", rbErr)
-			}
-		} else {
-			if cmErr := tx.Commit(); cmErr != nil {
-				log.Println("Commit rollback error: ", cmErr)
-			}
-		}
-	}()
-
 	var query string = "DELETE FROM patient WHERE token_id=$1"
-	result, err := tx.ExecContext(ctx, query, tokenID)
+	result, err := rec.db.ExecContext(ctx, query, tokenID)
 	if err != nil {
 		return -1, err
 	}
-	rowAffected, err := result.RowsAffected()
+	rowAffected, _ := result.RowsAffected()
 
 	return rowAffected, nil
 

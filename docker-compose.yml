@@ -19,6 +19,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      ENVIRONMENT: ${ENVIRONMENT}
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
       DB_USER: ${DB_USER}
@@ -30,6 +31,7 @@ services:
       NEON_CONNSTR: ${NEON_CONNSTR}
       ALLOWED_ORIGIN: ${ALLOWED_ORIGIN}
       PORT: ${PORT}
+      MONITOR_KEY: ${MONITOR_KEY}
     depends_on:
       db:
         condition: service_healthy

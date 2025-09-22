@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -37,11 +38,10 @@ type RedisConfig struct {
 func init() {
 
 	var err error
-
-	_ = godotenv.Load() // load env from .env file to program's environment
-
 	var dbConnStr string
 	var redisConfig RedisConfig
+
+	_ = godotenv.Load() // load env vars from .env file to program's environment
 
 	switch os.Getenv("ENVIRONMENT") {
 	case "development":
@@ -77,7 +77,12 @@ func init() {
 			redisConfig.Pass = redisConfiguartion.Pass
 			redisConfig.Port = redisConfiguartion.Port
 		}
+	default:
+		{
+			log.Fatal("error recognizing ENVIRONMENT: Cannot load ENV variable")
+		}
 	}
+
 	// Get database client
 	db, err = driver.InitDB(dbDriver, dbConnStr)
 	if err != nil {
@@ -115,22 +120,46 @@ func main() {
 	// endpoint to check server health
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 
+		log.Println("health check API triggered")
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]string{"message": "Server is functioning"})
 
 	}).Methods(http.MethodGet)
 
-	router.Use(middleware.OriginValidator)
+	// endpoint to check database stats
+	router.HandleFunc("/db/stats", func(w http.ResponseWriter, r *http.Request) {
 
-	// Public routes for patient details
+		token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+
+		if token != os.Getenv("MONITOR_KEY") {
+			w.Header().Set("Content-Type", "application/json")
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			log.Println("DB stats API triggered but unauthorized")
+			return
+		}
+
+		stats := db.Stats()
+
+		log.Println("DB stats API triggered")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(stats)
+	}).Methods(http.MethodGet)
+
+	if os.Getenv("ENVIRONMENT") != "development" {
+		router.Use(middleware.OriginValidator)
+	}
+
+	// Public route for patient details
 	router.HandleFunc("/api/v1/patients/{token_id}", apiRoutes.GetPatientByTokenID).Methods(http.MethodGet)
 
+	// Login Route
 	router.HandleFunc("/api/v1/login", apiRoutes.LoginHandler).Methods(http.MethodPost)
-	protectedRouter := router.PathPrefix("/api/v1").Subrouter() // creating subrouter for path "/" that will require authentication
-	protectedRouter.Use(middleware.AuthMiddleware)
 
 	// Protected Routes
+	protectedRouter := router.PathPrefix("/api/v1").Subrouter() // creating subrouter for path "/" that will require authentication
+	protectedRouter.Use(middleware.AuthMiddleware)
 	protectedRouter.HandleFunc("/patients", apiRoutes.GetAllPatients).Methods(http.MethodGet)
 	protectedRouter.HandleFunc("/patients", apiRoutes.CreatePatient).Methods(http.MethodPost)
 	protectedRouter.HandleFunc("/patients/{token_id}", apiRoutes.UpdatePatient).Methods(http.MethodPut)
@@ -171,7 +200,13 @@ func main() {
 	// Delegate server startup to listen for interrupt signal and server shutdown
 	go func() {
 		log.Printf("Server starting on port %s", port)
-		log.Fatal(server.ListenAndServe())
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Printf("Server error: %v", err)
+
+			// sending an interrupt to trigger gracefull shutdown
+			p, _ := os.FindProcess(os.Getpid())
+			_ = p.Signal(os.Interrupt)
+		}
 		close(done) // signal server has exited
 	}()
 

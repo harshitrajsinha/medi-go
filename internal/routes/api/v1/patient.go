@@ -46,8 +46,8 @@ func (p *APIRoutes) GetAllPatients(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			// send error response
-			w.WriteHeader(http.StatusInternalServerError)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusInternalServerError, Message: "Error occured while reading data"})
 			panic(err)
 		}
@@ -82,8 +82,8 @@ func (p *APIRoutes) GetPatientByTokenID(w http.ResponseWriter, r *http.Request) 
 
 		// 100000 (inclusive) → 999999 (inclusive)
 		if len(id) != 6 {
-			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusBadRequest, Message: "Invalid token ID"})
 			log.Println("Invalid token ID")
 			return
@@ -92,8 +92,8 @@ func (p *APIRoutes) GetPatientByTokenID(w http.ResponseWriter, r *http.Request) 
 		// Get data from store layer
 		resp, err := p.service.GetPatientByTokenID(id)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusInternalServerError, Message: "Error occured while reading data"})
 			panic(err)
 		}
@@ -132,8 +132,8 @@ func (p *APIRoutes) GetAllPatientsByDocID(w http.ResponseWriter, r *http.Request
 		// Check if id is valid uuid
 		doctorID, _ := uuid.Parse(id)
 		if doctorID.Version() != 4 {
-			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusBadRequest, Message: "Invalid doctor ID"})
 			log.Println("Invalid doctor ID")
 			return
@@ -148,8 +148,8 @@ func (p *APIRoutes) GetAllPatientsByDocID(w http.ResponseWriter, r *http.Request
 		resp, err := p.service.GetAllPatientsByDoc(doctorID, int32(limit), int32(offset))
 		if err != nil {
 			// send error response
-			w.WriteHeader(http.StatusInternalServerError)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusInternalServerError, Message: "Error occured while reading data"})
 			panic(err)
 		}
@@ -186,8 +186,8 @@ func (p *APIRoutes) CreatePatient(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			// send error response
-			w.WriteHeader(http.StatusInternalServerError)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusInternalServerError, Message: "Error occured while reading data"})
 			panic(err)
 		}
@@ -198,8 +198,8 @@ func (p *APIRoutes) CreatePatient(w http.ResponseWriter, r *http.Request) {
 		err = json.NewDecoder(strings.NewReader(string(body))).Decode(&patientReq)
 		if err != nil {
 			// send error response
-			w.WriteHeader(http.StatusInternalServerError)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusInternalServerError, Message: "Error occured while reading data"})
 			log.Println(err)
 			return
@@ -208,8 +208,8 @@ func (p *APIRoutes) CreatePatient(w http.ResponseWriter, r *http.Request) {
 		// validate request body
 		if err := models.ValidatePatientReq(patientReq); err != nil {
 			// send bad request response
-			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusBadRequest, Message: err.Error()})
 			log.Println(err)
 			return
@@ -219,8 +219,8 @@ func (p *APIRoutes) CreatePatient(w http.ResponseWriter, r *http.Request) {
 		patientToken, err := p.service.CreatePatient(&patientReq)
 		if err != nil {
 			// error while storing data to db
-			w.WriteHeader(http.StatusInternalServerError)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusInternalServerError, Message: "Error occured while reading data"})
 			panic(err)
 		}
@@ -266,8 +266,8 @@ func (p *APIRoutes) UpdatePatient(w http.ResponseWriter, r *http.Request) {
 		id := strings.TrimSpace(params["token_id"])
 
 		if len(id) != 6 {
-			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusBadRequest, Message: "Invalid token ID"})
 			log.Println("Invalid token ID")
 			return
@@ -277,8 +277,8 @@ func (p *APIRoutes) UpdatePatient(w http.ResponseWriter, r *http.Request) {
 		// Read request body
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusInternalServerError, Message: "Error occured while reading data"})
 			panic(err)
 		}
@@ -286,8 +286,8 @@ func (p *APIRoutes) UpdatePatient(w http.ResponseWriter, r *http.Request) {
 		var patientReq models.Patient
 		err = json.NewDecoder(strings.NewReader(string(body))).Decode(&patientReq)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusInternalServerError, Message: "Error occured while reading data"})
 			log.Println(err)
 			return
@@ -295,8 +295,8 @@ func (p *APIRoutes) UpdatePatient(w http.ResponseWriter, r *http.Request) {
 
 		// validate request body
 		if err := models.ValidatePatientReq(patientReq); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusBadRequest, Message: err.Error()})
 			log.Println(err)
 			return
@@ -305,24 +305,24 @@ func (p *APIRoutes) UpdatePatient(w http.ResponseWriter, r *http.Request) {
 		// Pass data to store to update patient
 		updatedPatient, err := p.service.UpdatePatient(id, &patientReq)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusInternalServerError, Message: "Error occured while reading data"})
 			panic(err)
 		}
 
 		if updatedPatient > 0 {
 			// data is updated successfully
-			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusOK, Message: "Patient data updated successfully!"})
 			log.Println("Patient data updated successfully!")
 			log.Println("Patient data updated successfully!")
 			// Get the updated result
 			// p.GetPatientByTokenID(w, r)
 		} else {
-			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusBadRequest, Message: "No data present for provided token ID or data already exists"})
 			log.Println("value of updatedPatient is ", updatedPatient)
 			return
@@ -355,8 +355,8 @@ func (p *APIRoutes) UpdatePatientPartial(w http.ResponseWriter, r *http.Request)
 		id := strings.TrimSpace(params["token_id"])
 
 		if len(id) != 6 {
-			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusBadRequest, Message: "Invalid token ID"})
 			log.Println("Invalid token ID")
 			return
@@ -366,8 +366,8 @@ func (p *APIRoutes) UpdatePatientPartial(w http.ResponseWriter, r *http.Request)
 		// Read request body
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusInternalServerError, Message: "Error occured while reading data"})
 			panic(err)
 		}
@@ -375,8 +375,8 @@ func (p *APIRoutes) UpdatePatientPartial(w http.ResponseWriter, r *http.Request)
 		var patientReq models.Patient
 		err = json.NewDecoder(strings.NewReader(string(body))).Decode(&patientReq)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusInternalServerError, Message: "Error occured while reading data"})
 			log.Println(err)
 			return
@@ -384,8 +384,8 @@ func (p *APIRoutes) UpdatePatientPartial(w http.ResponseWriter, r *http.Request)
 
 		// validate request body  for partial update
 		if err := models.ValidatePatientPatchReq(body); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusBadRequest, Message: err.Error()})
 			log.Println(err)
 			return
@@ -394,23 +394,23 @@ func (p *APIRoutes) UpdatePatientPartial(w http.ResponseWriter, r *http.Request)
 		// Pass data to store to update patient
 		updatedPatient, err := p.service.UpdatePatient(id, &patientReq)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusInternalServerError, Message: "Error occured while reading data"})
 			panic(err)
 		}
 
 		if updatedPatient > 0 {
 			// data is updated successfully
-			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusOK, Message: "Patient data updated successfully!"})
 			log.Println("Patient data updated successfully!")
 			// Get the updated result
 			// p.GetPatientByTokenID(w, r)
 		} else {
-			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusBadRequest, Message: "No data present for provided token ID or data already exists"})
 			log.Println("value of updatedPatient is ", updatedPatient)
 			return
@@ -445,8 +445,8 @@ func (p *APIRoutes) DeletePatient(w http.ResponseWriter, r *http.Request) {
 
 		if len(id) <= 0 {
 			log.Println(id)
-			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusBadRequest, Message: "Invalid token ID"})
 			log.Println("Invalid token ID")
 			return
@@ -455,23 +455,23 @@ func (p *APIRoutes) DeletePatient(w http.ResponseWriter, r *http.Request) {
 		// Pass data to service layer to delete patient
 		deletedPatient, err := p.service.DeletePatient(id)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusInternalServerError, Message: "Error occured while deleting data"})
 			panic(err)
 		}
 
 		if deletedPatient > 0 {
 			// data is deleted successfully
-			w.WriteHeader(http.StatusNoContent)
 			w.Header().Set("Content-Type", "application/json")
-			log.Println("value of deletedPatient is ", deletedPatient)
+			w.WriteHeader(http.StatusNoContent)
+			log.Println("value of deleted Patient is ", deletedPatient)
 			return
 		} else {
-			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(Response{Code: http.StatusBadRequest, Message: "No data present for provided patient ID or data already deleted"})
-			log.Println("value of deletedPatient is ", deletedPatient)
+			log.Println("value of deleted Patient is ", deletedPatient)
 			return
 		}
 

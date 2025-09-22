@@ -29,10 +29,10 @@ func InitDB(dbDriver string, connString string) (*DBClient, error) {
 	}
 
 	// Set connection pool settings
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(5)
-	db.SetConnMaxLifetime(30 * time.Minute)
-	db.SetConnMaxIdleTime(5 * time.Minute)
+	db.SetMaxOpenConns(20)
+	db.SetMaxIdleConns(20)
+	db.SetConnMaxLifetime(15 * time.Minute)
+	db.SetConnMaxIdleTime(10 * time.Minute)
 
 	// connection timeout at application level
 	// (If db.PingContext(ctx) does not complete within 30 seconds, it will be canceled automatically.)
