@@ -2,12 +2,10 @@
 
 ![frontend](./assets/images/frontend.png)
 
-### 🚀 A Golang web application that consists of a receptionist portal & doctor portal which performs the following tasks:
+🚀 A Golang web application that consists of a receptionist portal & doctor portal which performs the following tasks:
 
-- A single login page for both portals.
-- Receptionists can register a new patient & perform CRUD operations.
-- Doctors can view registered patient-related details and diagnose based on symptoms
-- Gemini AI to generate diagnosis based on symptoms.
+- A **single login page** for doctor and receptionist - **Receptionists** can add a new patient record, update records and delete records. **Doctors** can view registered patient-related details and diagnose based on symptoms. **Pateints** can check their report based on unique token ID.
+- Google's Gemini is used as an **AI agent to diagnose and treat** based on symptoms.
 
 ## Deployment links
 
@@ -16,25 +14,32 @@ Backend: https://medigo-7u9l.onrender.com/
 
 ## 👨‍🚀 Postman Collection Documentation
 
-[Postman Documentation URL](https://documenter.getpostman.com/view/40689865/2sB34kDdn6)
+[Postman Documentation URL](https://documenter.getpostman.com/view/40689865/2sB3HtHHfh)
 
-## ✨Features
+## ✨Features and Best Practices
 
-- 🔗 **Dependency Injection** for modularity
-- ⌛ **API Versioning** for backward compatibility
-- 💾 **Persistant storage** using PostgreSQL
-- ⚡**Caching** - To reduce server load
-- 🗐 **Pagination** - To efficiently handle and deliver large datasets
-- 🚧 **Rate Limit** - To protect server resources
-- 🔒 **JWT Authentication** for security
+- **API Versioning** for backward compatibility
+- **Caching** - To reduce server load
+- **Dependency Injection** for modularity
+- **JWT Authentication** for security
+- **Persistant storage** using PostgreSQL
+- **Pagination** - To efficiently handle and deliver large datasets
+- **Rate Limit** - To protect server resources
+
+## 🛡️Security
+
+- **Rate Limit** to avoid API misuse and DDoS
+- **Origin validator** to avoid accessing API other than allowed origins, not even postman
+- **API read timeout** to avoid slowris attack
+- **Input validation** to avoid SQL injection
 
 ## 📦 Tech Stack
 
 - **Backend** : Golang
-- **AI Assitant**: Gemini
 - **Frontend** : HTML/CSS/JavaScript
-- **Database** : PostgreSQL
+- **AI Assitant**: Google's Gemini
 - **Caching** : Redis
+- **Database** : PostgreSQL
 - **Containerization** : Docker
 - **Deployment** : Vercel (Frontend) + Render (Backend)
 
@@ -56,6 +61,8 @@ cd medi-go
 Create .env file in root directory
 
 ```bash
+ENVIRONMENT=production
+
 # For postgres docker image
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=yourstrongpassword
@@ -68,10 +75,20 @@ DB_PASS=yourstrongpassword
 DB_PORT=5432
 DB_HOST=db
 
+# Neon cloud service (if configured)
+NEON_CONNSTR=neon_cloud_connection
+
+APP_PORT=8000
+
 JWT_KEY = secretkeyword
 
 REDIS_HOST=redis
 REDIS_PORT=6379
+
+MONITOR_KEY=secretkeyfordbstats
+
+# Frontend application
+ALLOWED_ORIGIN=http://localhost:3000
 ```
 
 ### 4. Run the application
